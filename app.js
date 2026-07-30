@@ -566,16 +566,7 @@
     return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("input", { value: filter, onChange: (e) => setFilter(e.target.value), placeholder: "\u{1F50E} \u05E1\u05D9\u05E0\u05D5\u05DF \u05DC\u05E4\u05D9 \u05DE\u05D3\u05D9\u05E0\u05D4...", className: "input-field border rounded-lg px-3 py-2 text-sm w-64" }), /* @__PURE__ */ React.createElement("button", { onClick: onAddNew, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium" }, "\u2795 \u05D4\u05D5\u05E1\u05E4\u05EA \u05DE\u05D3\u05D9\u05E0\u05D4/\u05E9\u05E0\u05D4")), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider max-h-96 overflow-y-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-sm" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05DE\u05D3\u05D9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05E9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA (\u05D0\u05DC\u05E4\u05D9\u05DD)"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05DE\u05E7\u05D5\u05E8"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }))), /* @__PURE__ */ React.createElement("tbody", null, rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: `${r.country_id}-${r.year}`, className: "border-t divider" }, /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-primary" }, r.country.flag, " ", r.country.name_he, " ", r.country.has_office && "\u2B50"), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-secondary" }, r.year), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-secondary" }, r.entries_to_israel_thousands), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-xs" }, r.is_ai_estimated ? "\u2728 AI" : r.source), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5" }, /* @__PURE__ */ React.createElement("button", { onClick: () => deleteRow(r), className: "text-red-500 hover:text-red-700 text-xs" }, "\u{1F5D1}\uFE0F \u05DE\u05D7\u05E7"))))))));
   }
   function SettingsSidebar({ open, onClose, mode, setMode, currentPassword, onChangePassword }) {
-    const [newPw, setNewPw] = useState("");
-    const [pwSaved, setPwSaved] = useState(false);
-    const savePw = async () => {
-      if (newPw.trim().length < 3) return;
-      await DataAPI.setSetting("site_password", newPw.trim());
-      onChangePassword(newPw.trim());
-      setPwSaved(true);
-      setNewPw("");
-      setTimeout(() => setPwSaved(false), 2e3);
-    };
+    const [showPwModal, setShowPwModal] = useState(false);
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-40 transition-opacity", style: { background: "var(--overlay-bg)", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none" }, onClick: onClose }), /* @__PURE__ */ React.createElement("div", { className: "fixed top-0 left-0 h-full w-full max-w-sm z-50 shadow-2xl transition-transform duration-300 overflow-y-auto card", style: { transform: open ? "translateX(0)" : "translateX(-100%)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between sticky top-0 card z-10" }, /* @__PURE__ */ React.createElement("h2", { className: "font-bold text-lg text-primary" }, "\u2699\uFE0F \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-8" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F313} \u05DE\u05E6\u05D1 \u05EA\u05E6\u05D5\u05D2\u05D4"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-3 gap-2" }, [["light", "\u2600\uFE0F \u05D1\u05D4\u05D9\u05E8"], ["dark", "\u{1F319} \u05DB\u05D4\u05D4"], ["system", "\u{1F5A5}\uFE0F \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"]].map(([key, label]) => /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -585,7 +576,33 @@
         style: mode === key ? { borderColor: "#2563eb", background: hexA("#2563eb", 0.12), color: "#2563eb" } : { borderColor: "var(--card-border)", color: "var(--text-secondary)" }
       },
       /* @__PURE__ */ React.createElement("span", { className: "text-xs font-medium" }, label)
-    )))), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F511} \u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D9\u05E1\u05DE\u05D4"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement("input", { type: "password", value: newPw, onChange: (e) => setNewPw(e.target.value), placeholder: "\u05E1\u05D9\u05E1\u05DE\u05D4 \u05D7\u05D3\u05E9\u05D4", className: "input-field flex-1 border rounded-lg px-3 py-2 text-sm" }), /* @__PURE__ */ React.createElement("button", { onClick: savePw, className: "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" }, "\u05E2\u05D3\u05DB\u05D5\u05DF")), pwSaved && /* @__PURE__ */ React.createElement("p", { className: "text-emerald-500 text-xs mt-2" }, "\u2705 \u05D4\u05E1\u05D9\u05E1\u05DE\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4")))));
+    ))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2" }, '\u{1F4A1} "\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9" \u05E2\u05D5\u05D1\u05E8 \u05DC\u05DB\u05D4\u05D4 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05D1\u05D9\u05DF 19:00 \u05DC-06:00 \u05DC\u05E4\u05D9 \u05E9\u05E2\u05D5\u05DF \u05D4\u05DE\u05DB\u05E9\u05D9\u05E8 \u05E9\u05DC\u05DA.')), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F511} \u05E1\u05D9\u05E1\u05DE\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowPwModal(true), className: "w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" }, "\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D9\u05E1\u05DE\u05D4")))), showPwModal && /* @__PURE__ */ React.createElement(ChangePasswordModal, { onClose: () => setShowPwModal(false), onChangePassword }));
+  }
+  function ChangePasswordModal({ onClose, onChangePassword }) {
+    const [newPw, setNewPw] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const save = async () => {
+      if (newPw.trim().length < 3) return;
+      setSaving(true);
+      await DataAPI.setSetting("site_password", newPw.trim());
+      onChangePassword(newPw.trim());
+      setSaving(false);
+      setSaved(true);
+      setTimeout(onClose, 1200);
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[70] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-sm border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "\u{1F511} \u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D9\u05E1\u05DE\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-4" }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "password",
+        value: newPw,
+        autoFocus: true,
+        onChange: (e) => setNewPw(e.target.value),
+        onKeyDown: (e) => e.key === "Enter" && save(),
+        placeholder: "\u05D4\u05D6\u05DF \u05E1\u05D9\u05E1\u05DE\u05D4 \u05D7\u05D3\u05E9\u05D4",
+        className: "input-field w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+      }
+    ), saved && /* @__PURE__ */ React.createElement("p", { className: "text-emerald-500 text-sm" }, "\u2705 \u05D4\u05E1\u05D9\u05E1\u05DE\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: save, disabled: saving || newPw.trim().length < 3, className: "w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium py-2.5 rounded-lg text-sm" }, saving ? "\u05E9\u05D5\u05DE\u05E8..." : "\u05E9\u05DE\u05D5\u05E8 \u05E1\u05D9\u05E1\u05DE\u05D4 \u05D7\u05D3\u05E9\u05D4"))));
   }
   const SUB_MODULES = [
     { key: "single", label: "\u{1F50E} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D1\u05D5\u05D3\u05D3\u05EA" },
@@ -637,16 +654,14 @@
       loadData();
     }, [loadData]);
     useEffect(() => {
-      var _a;
-      if (typeof window === "undefined" || !window.matchMedia) return;
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      setSystemDark(mq.matches);
-      const listener = (e) => setSystemDark(e.matches);
-      (_a = mq.addEventListener) == null ? void 0 : _a.call(mq, "change", listener);
-      return () => {
-        var _a2;
-        return (_a2 = mq.removeEventListener) == null ? void 0 : _a2.call(mq, "change", listener);
+      const checkClock = () => {
+        const hour = (/* @__PURE__ */ new Date()).getHours();
+        const isNight = hour >= 19 || hour < 6;
+        setSystemDark(isNight);
       };
+      checkClock();
+      const interval = setInterval(checkClock, 60 * 1e3);
+      return () => clearInterval(interval);
     }, []);
     const isDark = mode === "dark" || mode === "system" && systemDark;
     const theme = TAB_THEMES[activeTab];
