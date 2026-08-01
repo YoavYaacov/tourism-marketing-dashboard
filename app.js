@@ -31,6 +31,13 @@
     t2: { name: "\u{1F4E1} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD 2023-\u05D4\u05D9\u05D5\u05DD", grad: "from-blue-600 to-indigo-600", text: "text-blue-700 dark:text-blue-300", solid: "#2563eb", years: YEARS_2023_TODAY },
     t3: { name: "\u{1F5C4}\uFE0F \u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05D0\u05D2\u05E8 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05E7\u05D9\u05E3", grad: "from-indigo-600 to-blue-900", text: "text-indigo-700 dark:text-indigo-300", solid: "#4338ca", years: YEARS_FULL }
   };
+  const DRILLIN_THEME = {
+    name: "\u{1F52C} Drill In \u2014 \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E1\u05E7\u05E8\u05D9 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA",
+    navLabel: "\u{1F52C} Drill In",
+    grad: "from-teal-600 to-emerald-600",
+    text: "text-teal-700 dark:text-teal-300",
+    solid: "#0d9488"
+  };
   const RANK_PARAMS = [
     { key: "sentiment", label: "\u2764\uFE0F \u05D0\u05D4\u05D3\u05D4 \u05E4\u05E8\u05D5-\u05D9\u05E9\u05E8\u05D0\u05DC\u05D9\u05EA" },
     { key: "roi", label: "\u{1F4B9} \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (\u05D9\u05E2\u05D9\u05DC\u05D5\u05EA \u05D4\u05DE\u05E8\u05D4)" },
@@ -135,10 +142,13 @@
     }
     return M.map((row) => row[n]);
   }
-  function runRegression(allMetrics, years) {
-    const rows = allMetrics.filter(
+  function getValidRegressionRows(allMetrics, years) {
+    return allMetrics.filter(
       (r) => years.includes(r.year) && REGRESSION_FIELDS.every((f) => r[f.key] != null) && r.entries_to_israel_thousands != null
     );
+  }
+  function runRegression(allMetrics, years) {
+    const rows = getValidRegressionRows(allMetrics, years);
     if (rows.length < REGRESSION_FIELDS.length + 2) return null;
     const y = rows.map((r) => r.entries_to_israel_thousands);
     const yStats = zscore(y);
@@ -296,6 +306,7 @@
     const [pw, setPw] = useState("");
     const [error, setError] = useState("");
     const [shake, setShake] = useState(false);
+    const [showPw, setShowPw] = useState(false);
     const submit = (e) => {
       if (e && e.preventDefault) e.preventDefault();
       if (pw.trim().length > 0 && pw.trim() === (currentPassword || "").trim()) {
@@ -307,10 +318,10 @@
         setTimeout(() => setShake(false), 500);
       }
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden", dir: "rtl" }, /* @__PURE__ */ React.createElement(GlobalStyles, null), /* @__PURE__ */ React.createElement("div", { className: "absolute inset-0 opacity-25", style: { backgroundImage: "radial-gradient(circle at 20% 20%, #0284c7 0, transparent 40%), radial-gradient(circle at 80% 70%, #4338ca 0, transparent 40%)" } }), /* @__PURE__ */ React.createElement("div", { className: `relative z-10 w-full max-w-md mx-4 ${shake ? "animate-[shake_0.4s]" : ""}` }, /* @__PURE__ */ React.createElement("div", { className: "text-center mb-8" }, /* @__PURE__ */ React.createElement("div", { className: "inline-flex items-center justify-center mb-4 bg-white/90 rounded-xl p-3 shadow-lg" }, /* @__PURE__ */ React.createElement(MinistryLogo, { size: 56 })), /* @__PURE__ */ React.createElement("h1", { className: "text-2xl font-bold text-white tracking-tight" }, "\u{1F9F3} \u05DE\u05E2\u05E8\u05DB\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("p", { className: "text-slate-400 text-sm mt-1" }, "\u2708\uFE0F \u05DC\u05D5\u05D7 \u05D1\u05E7\u05E8\u05D4 \u05D0\u05E0\u05DC\u05D9\u05D8\u05D9 \u2014 \u05D2\u05D9\u05E9\u05D4 \u05DE\u05D5\u05D2\u05D1\u05DC\u05EA \u{1F512}")), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, className: "bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl" }, /* @__PURE__ */ React.createElement("label", { className: "block text-sm text-slate-300 mb-2 font-medium" }, "\u{1F511} \u05E1\u05D9\u05E1\u05DE\u05EA \u05D2\u05D9\u05E9\u05D4"), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden", dir: "rtl" }, /* @__PURE__ */ React.createElement(GlobalStyles, null), /* @__PURE__ */ React.createElement("div", { className: "absolute inset-0 opacity-25", style: { backgroundImage: "radial-gradient(circle at 20% 20%, #0284c7 0, transparent 40%), radial-gradient(circle at 80% 70%, #4338ca 0, transparent 40%)" } }), /* @__PURE__ */ React.createElement("div", { className: `relative z-10 w-full max-w-md mx-4 ${shake ? "animate-[shake_0.4s]" : ""}` }, /* @__PURE__ */ React.createElement("div", { className: "text-center mb-8" }, /* @__PURE__ */ React.createElement("div", { className: "inline-flex items-center justify-center mb-4 bg-white/90 rounded-xl p-3 shadow-lg" }, /* @__PURE__ */ React.createElement(MinistryLogo, { size: 56 })), /* @__PURE__ */ React.createElement("h1", { className: "text-2xl font-bold text-white tracking-tight" }, "\u{1F9F3} \u05DE\u05E2\u05E8\u05DB\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("p", { className: "text-slate-400 text-sm mt-1" }, "\u2708\uFE0F \u05DC\u05D5\u05D7 \u05D1\u05E7\u05E8\u05D4 \u05D0\u05E0\u05DC\u05D9\u05D8\u05D9 \u2014 \u05D2\u05D9\u05E9\u05D4 \u05DE\u05D5\u05D2\u05D1\u05DC\u05EA \u{1F512}")), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, className: "bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl" }, /* @__PURE__ */ React.createElement("label", { className: "block text-sm text-slate-300 mb-2 font-medium" }, "\u{1F511} \u05E1\u05D9\u05E1\u05DE\u05EA \u05D2\u05D9\u05E9\u05D4"), /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement(
       "input",
       {
-        type: "password",
+        type: showPw ? "text" : "password",
         value: pw,
         onChange: (e) => {
           setPw(e.target.value);
@@ -321,9 +332,18 @@
         },
         placeholder: "\u05D4\u05D6\u05D9\u05E0\u05D5 \u05E1\u05D9\u05E1\u05DE\u05D4",
         autoFocus: true,
-        className: "w-full bg-slate-900/60 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+        className: "w-full bg-slate-900/60 border border-slate-700 rounded-xl py-3 px-4 pl-11 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
       }
-    ), error && /* @__PURE__ */ React.createElement("p", { className: "text-red-400 text-sm mt-2" }, error), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submit, className: "w-full mt-6 bg-gradient-to-l from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white font-semibold py-3 rounded-xl transition shadow-lg cursor-pointer" }, "\u{1F6AA} \u05DB\u05E0\u05D9\u05E1\u05D4 \u05DC\u05DE\u05E2\u05E8\u05DB\u05EA")), /* @__PURE__ */ React.createElement("p", { className: "text-center text-slate-500 text-xs mt-6" }, "\xA9 2026 \u05DE\u05E9\u05E8\u05D3 \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 \u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05D5\u05D5\u05E7")));
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: () => setShowPw((s) => !s),
+        tabIndex: -1,
+        className: "absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-lg"
+      },
+      showPw ? "\u{1F648}" : "\u{1F441}\uFE0F"
+    )), error && /* @__PURE__ */ React.createElement("p", { className: "text-red-400 text-sm mt-2" }, error), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submit, className: "w-full mt-6 bg-gradient-to-l from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white font-semibold py-3 rounded-xl transition shadow-lg cursor-pointer" }, "\u{1F6AA} \u05DB\u05E0\u05D9\u05E1\u05D4 \u05DC\u05DE\u05E2\u05E8\u05DB\u05EA")), /* @__PURE__ */ React.createElement("p", { className: "text-center text-slate-500 text-xs mt-6" }, "\xA9 2026 \u05DE\u05E9\u05E8\u05D3 \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 \u05DE\u05D7\u05DC\u05E7\u05EA \u05E9\u05D9\u05D5\u05D5\u05E7")));
   }
   function CountryPicker({ label, value, onChange, countries, exclude = [] }) {
     const [query, setQuery] = useState(value || "");
@@ -624,6 +644,14 @@
     const [loadingExplain, setLoadingExplain] = useState(false);
     const [explainError, setExplainError] = useState(null);
     const [showPicker, setShowPicker] = useState(false);
+    const [showAudit, setShowAudit] = useState(false);
+    const auditRows = useMemo(() => {
+      const rows = getValidRegressionRows(filteredMetrics, years);
+      return rows.map((r) => {
+        var _a;
+        return __spreadProps(__spreadValues({}, r), { countryName: ((_a = countries.find((c) => c.id === r.country_id)) == null ? void 0 : _a.name_he) || "?" });
+      }).sort((a, b) => a.countryName.localeCompare(b.countryName) || a.year - b.year);
+    }, [filteredMetrics, years, countries]);
     const chartData = useMemo(() => {
       if (!result) return null;
       return {
@@ -654,7 +682,7 @@
       setLoadingExplain(false);
     };
     const selectedCountries = countries.filter((c) => selectedIds.includes(c.id));
-    return /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, "\u{1F9EE} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u2014 \u05D0\u05D9\u05DC\u05D5 \u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD \u05DE\u05E9\u05E4\u05D9\u05E2\u05D9\u05DD \u05E2\u05DC \u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05EA\u05D9\u05D9\u05E8\u05D9\u05DD"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowPicker((s) => !s), className: "text-xs px-3 py-1.5 rounded-lg border text-secondary", style: { borderColor: "var(--card-border)" } }, showPicker ? "\u05E1\u05D2\u05D5\u05E8 \u05D1\u05D7\u05D9\u05E8\u05EA \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u25B2" : "\u{1F30D} \u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DC\u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u25BC")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "\u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D4\u05E0\u05DB\u05DC\u05DC\u05D5\u05EA \u05D1\u05D7\u05D9\u05E9\u05D5\u05D1 (", selectedCountries.length, " \u05DE\u05EA\u05D5\u05DA ", countries.length, "): ", selectedCountries.map((c) => `${c.flag || ""} ${c.name_he}`).join(", ") || "\u05D0\u05D9\u05DF \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05E0\u05D1\u05D7\u05E8\u05D5\u05EA"), showPicker && /* @__PURE__ */ React.createElement("div", { className: "border rounded-xl p-3 divider", style: { maxHeight: 220, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 mb-2" }, /* @__PURE__ */ React.createElement("button", { onClick: selectAll, className: "text-xs text-blue-500" }, "\u05D1\u05D7\u05E8 \u05D4\u05DB\u05DC"), /* @__PURE__ */ React.createElement("button", { onClick: selectNone, className: "text-xs text-secondary" }, "\u05E0\u05E7\u05D4 \u05D4\u05DB\u05DC")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-1.5" }, countries.map((c) => /* @__PURE__ */ React.createElement("label", { key: c.id, className: "flex items-center gap-1.5 text-xs text-secondary" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: selectedIds.includes(c.id), onChange: () => toggleCountry(c.id) }), c.flag, " ", c.name_he)))), !result ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-10 text-secondary text-sm" }, "\u26A0\uFE0F \u05D0\u05D9\u05DF \u05DE\u05E1\u05E4\u05D9\u05E7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05DC\u05D0\u05D9\u05DD (\u05E0\u05D3\u05E8\u05E9\u05D5\u05EA \u05DC\u05E4\u05D7\u05D5\u05EA ", REGRESSION_FIELDS.length + 2, " \u05E9\u05D5\u05E8\u05D5\u05EA \u05EA\u05E7\u05D9\u05E0\u05D5\u05EA) \u05E2\u05D1\u05D5\u05E8 \u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA/\u05D4\u05E9\u05E0\u05D9\u05DD \u05D4\u05E0\u05D1\u05D7\u05E8\u05D5\u05EA.") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-end" }, /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.12), color: theme.solid } }, "R\xB2 = ", result.r2, " \xB7 ", result.n, " \u05EA\u05E6\u05E4\u05D9\u05D5\u05EA")), chartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: chartData, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }, height: 220 }), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" }, result.influence.map((f) => /* @__PURE__ */ React.createElement("div", { key: f.key, className: "flex items-center justify-between text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, f.direction === "positive" ? "\u{1F4C8}" : "\u{1F4C9}", " ", f.label), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, f.influencePct, "%")))), /* @__PURE__ */ React.createElement("div", { className: "border-t divider pt-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h5", { className: "font-semibold text-primary text-sm" }, "\u{1F4AC} \u05D4\u05E1\u05D1\u05E8 \u05D1\u05E9\u05E4\u05D4 \u05E4\u05E9\u05D5\u05D8\u05D4"), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, "\u{1F9EE} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u2014 \u05D0\u05D9\u05DC\u05D5 \u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD \u05DE\u05E9\u05E4\u05D9\u05E2\u05D9\u05DD \u05E2\u05DC \u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05EA\u05D9\u05D9\u05E8\u05D9\u05DD"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowPicker((s) => !s), className: "text-xs px-3 py-1.5 rounded-lg border text-secondary", style: { borderColor: "var(--card-border)" } }, showPicker ? "\u05E1\u05D2\u05D5\u05E8 \u05D1\u05D7\u05D9\u05E8\u05EA \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u25B2" : "\u{1F30D} \u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DC\u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u25BC")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "\u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D4\u05E0\u05DB\u05DC\u05DC\u05D5\u05EA \u05D1\u05D7\u05D9\u05E9\u05D5\u05D1 (", selectedCountries.length, " \u05DE\u05EA\u05D5\u05DA ", countries.length, "): ", selectedCountries.map((c) => `${c.flag || ""} ${c.name_he}`).join(", ") || "\u05D0\u05D9\u05DF \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05E0\u05D1\u05D7\u05E8\u05D5\u05EA"), showPicker && /* @__PURE__ */ React.createElement("div", { className: "border rounded-xl p-3 divider", style: { maxHeight: 220, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 mb-2" }, /* @__PURE__ */ React.createElement("button", { onClick: selectAll, className: "text-xs text-blue-500" }, "\u05D1\u05D7\u05E8 \u05D4\u05DB\u05DC"), /* @__PURE__ */ React.createElement("button", { onClick: selectNone, className: "text-xs text-secondary" }, "\u05E0\u05E7\u05D4 \u05D4\u05DB\u05DC")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 gap-1.5" }, countries.map((c) => /* @__PURE__ */ React.createElement("label", { key: c.id, className: "flex items-center gap-1.5 text-xs text-secondary" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: selectedIds.includes(c.id), onChange: () => toggleCountry(c.id) }), c.flag, " ", c.name_he)))), !result ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-10 text-secondary text-sm" }, "\u26A0\uFE0F \u05D0\u05D9\u05DF \u05DE\u05E1\u05E4\u05D9\u05E7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05DC\u05D0\u05D9\u05DD (\u05E0\u05D3\u05E8\u05E9\u05D5\u05EA \u05DC\u05E4\u05D7\u05D5\u05EA ", REGRESSION_FIELDS.length + 2, " \u05E9\u05D5\u05E8\u05D5\u05EA \u05EA\u05E7\u05D9\u05E0\u05D5\u05EA) \u05E2\u05D1\u05D5\u05E8 \u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA/\u05D4\u05E9\u05E0\u05D9\u05DD \u05D4\u05E0\u05D1\u05D7\u05E8\u05D5\u05EA.") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAudit((s) => !s), className: "text-xs px-3 py-1.5 rounded-lg border text-secondary", style: { borderColor: "var(--card-border)" } }, showAudit ? "\u05D4\u05E1\u05EA\u05E8 \u05E0\u05EA\u05D5\u05E0\u05D9 \u05D2\u05DC\u05DD \u25B2" : "\u{1F50D} \u05D4\u05E6\u05D2 \u05E0\u05EA\u05D5\u05E0\u05D9 \u05D2\u05DC\u05DD \u05E9\u05E9\u05D9\u05DE\u05E9\u05D5 \u05DC\u05D7\u05D9\u05E9\u05D5\u05D1 \u25BC"), /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.12), color: theme.solid } }, "R\xB2 = ", result.r2, " \xB7 ", result.n, " \u05EA\u05E6\u05E4\u05D9\u05D5\u05EA")), showAudit && /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider", style: { maxHeight: 260, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-xs" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05DE\u05D3\u05D9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05E9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "HDI"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05D7\u05D9\u05E4\u05D5\u05E9"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05D0\u05D9\u05DB\u05D5\u05EA \u05EA\u05E2\u05D5\u05E4\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05D0\u05D5\u05DB' \u05D9\u05D4\u05D5\u05D3\u05D9\u05EA"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC (\u05D0\u05DC\u05E4\u05D9\u05DD)"))), /* @__PURE__ */ React.createElement("tbody", null, auditRows.map((r, i) => /* @__PURE__ */ React.createElement("tr", { key: i, className: "border-t divider" }, /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-primary" }, r.countryName), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.year), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.hdi), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.outbound_tourism_millions), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.online_search_index), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.air_transport_quality), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.jewish_population), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1 text-secondary" }, r.entries_to_israel_thousands))))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted p-2" }, "\u{1F4A1} \u05D1\u05D3\u05D9\u05E7\u05D4 \u05E2\u05E6\u05DE\u05D0\u05D9\u05EA: \u05D0\u05E4\u05E9\u05E8 \u05DC\u05D4\u05E2\u05EA\u05D9\u05E7 \u05D0\u05EA \u05D4\u05D8\u05D1\u05DC\u05D4 \u05D4\u05D6\u05D5 \u05DC\u05D0\u05E7\u05E1\u05DC \u05D5\u05DC\u05D4\u05E8\u05D9\u05E5 \u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u05DE\u05E7\u05D1\u05D9\u05DC\u05D4 (\u05DC\u05DE\u05E9\u05DC \u05E2\u05DD \u05DB\u05DC\u05D9 \u05D4\u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u05D4\u05DE\u05D5\u05D1\u05E0\u05D4 \u05E9\u05DC \u05D0\u05E7\u05E1\u05DC/Google Sheets) \u05DB\u05D3\u05D9 \u05DC\u05D5\u05D5\u05D3\u05D0 \u05E9\u05D4\u05EA\u05D5\u05E6\u05D0\u05D5\u05EA \u05EA\u05D5\u05D0\u05DE\u05D5\u05EA.")), chartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: chartData, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }, height: 220 }), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" }, result.influence.map((f) => /* @__PURE__ */ React.createElement("div", { key: f.key, className: "flex items-center justify-between text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, f.direction === "positive" ? "\u{1F4C8}" : "\u{1F4C9}", " ", f.label), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, f.influencePct, "%")))), /* @__PURE__ */ React.createElement("div", { className: "border-t divider pt-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h5", { className: "font-semibold text-primary text-sm" }, "\u{1F4AC} \u05D4\u05E1\u05D1\u05E8 \u05D1\u05E9\u05E4\u05D4 \u05E4\u05E9\u05D5\u05D8\u05D4"), /* @__PURE__ */ React.createElement(
       "button",
       {
         onClick: runAnalysis,
@@ -877,6 +905,107 @@
       m.label
     ))), sub === "single" && /* @__PURE__ */ React.createElement(SingleCountryDive, { years, theme, countries, allMetrics }), sub === "compare" && /* @__PURE__ */ React.createElement(ComparativeAnalysis, { years, theme, countries, allMetrics }), sub === "rank" && /* @__PURE__ */ React.createElement(RankingAnalysis, { years, theme, countries, allMetrics }));
   }
+  const MAX_EXTRACT_CHARS = 9e3;
+  async function extractFileContent(file) {
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (ext === "csv" || ext === "xlsx" || ext === "xls") {
+      if (!window.XLSX) throw new Error("\u05E1\u05E4\u05E8\u05D9\u05D9\u05EA \u05E7\u05E8\u05D9\u05D0\u05EA \u05D4\u05D0\u05E7\u05E1\u05DC \u05DC\u05D0 \u05E0\u05D8\u05E2\u05E0\u05D4 (\u05D1\u05D3\u05D5\u05E7 \u05D7\u05D9\u05D1\u05D5\u05E8 \u05DC\u05D0\u05D9\u05E0\u05D8\u05E8\u05E0\u05D8 \u05D5\u05E8\u05E2\u05E0\u05DF).");
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      let text = "";
+      wb.SheetNames.forEach((name) => {
+        const sheet = wb.Sheets[name];
+        const csv = XLSX.utils.sheet_to_csv(sheet);
+        text += `
+== \u05D2\u05D9\u05DC\u05D9\u05D5\u05DF: ${name} ==
+${csv}`;
+      });
+      return text.slice(0, MAX_EXTRACT_CHARS);
+    }
+    if (ext === "pdf") {
+      if (!window.pdfjsLib) throw new Error("\u05E1\u05E4\u05E8\u05D9\u05D9\u05EA \u05E7\u05E8\u05D9\u05D0\u05EA \u05D4-PDF \u05DC\u05D0 \u05E0\u05D8\u05E2\u05E0\u05D4 (\u05D1\u05D3\u05D5\u05E7 \u05D7\u05D9\u05D1\u05D5\u05E8 \u05DC\u05D0\u05D9\u05E0\u05D8\u05E8\u05E0\u05D8 \u05D5\u05E8\u05E2\u05E0\u05DF).");
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages && text.length < MAX_EXTRACT_CHARS; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((it) => it.str).join(" ") + "\n";
+      }
+      return text.slice(0, MAX_EXTRACT_CHARS);
+    }
+    throw new Error(`\u05E1\u05D5\u05D2 \u05E7\u05D5\u05D1\u05E5 \u05DC\u05D0 \u05E0\u05EA\u05DE\u05DA: .${ext}. \u05D9\u05E9 \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA Excel (.xlsx/.xls), CSV \u05D0\u05D5 PDF.`);
+  }
+  function parseParagraphSections(text) {
+    return text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  }
+  function SurveyDrillIn({ theme }) {
+    const [file, setFile] = useState(null);
+    const [extracting, setExtracting] = useState(false);
+    const [extractError, setExtractError] = useState(null);
+    const [extractedPreviewLen, setExtractedPreviewLen] = useState(0);
+    const [extractedText, setExtractedText] = useState(null);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisError, setAnalysisError] = useState(null);
+    const [analysis, setAnalysis] = useState(null);
+    const fileInputRef = useRef(null);
+    const onFileSelected = async (f) => {
+      if (!f) return;
+      setFile(f);
+      setAnalysis(null);
+      setAnalysisError(null);
+      setExtracting(true);
+      setExtractError(null);
+      try {
+        const text = await extractFileContent(f);
+        setExtractedText(text);
+        setExtractedPreviewLen(text.length);
+      } catch (err) {
+        setExtractError(String(err.message || err));
+        setExtractedText(null);
+      }
+      setExtracting(false);
+    };
+    const runAnalysis = async () => {
+      if (!extractedText) return;
+      setAnalyzing(true);
+      setAnalysisError(null);
+      try {
+        const res = await DataAPI.generateInsight("survey_analysis", { extracted_text: extractedText, filename: file == null ? void 0 : file.name });
+        setAnalysis(res.text);
+      } catch (err) {
+        setAnalysisError(String(err.message || err));
+      }
+      setAnalyzing(false);
+    };
+    const reset = () => {
+      setFile(null);
+      setExtractedText(null);
+      setAnalysis(null);
+      setExtractError(null);
+      setAnalysisError(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, "\u{1F52C} Drill In \u2014 \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E1\u05E7\u05E8\u05D9 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "\u05D4\u05E2\u05DC\u05D4 \u05E7\u05D5\u05D1\u05E5 \u05E1\u05E7\u05E8 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05E0\u05DB\u05E0\u05E1\u05EA (Excel / CSV / PDF) \u05DC\u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05E2\u05DE\u05D9\u05E7 \u05DC\u05E4\u05D9 \u05E1\u05D2\u05DE\u05E0\u05D8\u05D9\u05DD. \u05D4\u05E7\u05D5\u05D1\u05E5 \u05E0\u05E7\u05E8\u05D0 \u05D5\u05DE\u05E2\u05D5\u05D1\u05D3 \u05D1\u05D3\u05E4\u05D3\u05E4\u05DF \u05D1\u05DC\u05D1\u05D3 \u2014 ", /* @__PURE__ */ React.createElement("b", null, "\u05D0\u05D9\u05E0\u05D5 \u05E0\u05E9\u05DE\u05E8"), " \u05D1\u05DE\u05E2\u05E8\u05DB\u05EA.")), !file && /* @__PURE__ */ React.createElement(
+      "label",
+      {
+        className: "flex flex-col items-center justify-center gap-3 rounded-2xl border-4 border-dashed cursor-pointer transition hover:opacity-80",
+        style: { borderColor: hexA(theme.solid, 0.35), background: hexA(theme.solid, 0.04), minHeight: 260 }
+      },
+      /* @__PURE__ */ React.createElement("div", { style: { width: 64, height: 64, borderRadius: "50%", background: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 32, color: "white" } }, "\u2B07\uFE0F")),
+      /* @__PURE__ */ React.createElement("p", { className: "text-primary font-semibold" }, "\u05DC\u05D7\u05E5 \u05DB\u05D3\u05D9 \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05E7\u05D5\u05D1\u05E5 \u05E1\u05E7\u05E8"),
+      /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "Excel (.xlsx/.xls) \xB7 CSV \xB7 PDF"),
+      /* @__PURE__ */ React.createElement("input", { ref: fileInputRef, type: "file", accept: ".xlsx,.xls,.csv,.pdf", className: "hidden", onChange: (e) => onFileSelected(e.target.files[0]) })
+    ), file && /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm text-primary font-medium" }, "\u{1F4C4} ", file.name), /* @__PURE__ */ React.createElement("button", { onClick: reset, className: "text-xs text-red-500" }, "\u{1F5D1}\uFE0F \u05D4\u05E1\u05E8 \u05E7\u05D5\u05D1\u05E5 \u05D5\u05D1\u05D7\u05E8 \u05D0\u05D7\u05E8")), extracting && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary" }, "\u{1F504} \u05E7\u05D5\u05E8\u05D0 \u05D0\u05EA \u05D4\u05E7\u05D5\u05D1\u05E5..."), extractError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-red-500" }, "\u26A0\uFE0F ", extractError), extractedText && !extracting && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "\u2705 \u05E0\u05E7\u05E8\u05D0\u05D5 ", fmtNum(extractedPreviewLen), " \u05EA\u05D5\u05D5\u05D9\u05DD \u05DE\u05D4\u05E7\u05D5\u05D1\u05E5 (\u05D0\u05DD \u05D4\u05E7\u05D5\u05D1\u05E5 \u05D0\u05E8\u05D5\u05DA, \u05D9\u05D9\u05EA\u05DB\u05DF \u05E9\u05E0\u05DC\u05E7\u05D7 \u05E8\u05E7 \u05D7\u05DC\u05E7\u05D5 \u05D4\u05E8\u05D0\u05E9\u05D5\u05DF)."), extractedText && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: runAnalysis,
+        disabled: analyzing,
+        className: `px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50`
+      },
+      analyzing ? "\u{1F504} \u05DE\u05E0\u05EA\u05D7..." : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7"
+    ), analysisError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-red-500" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", analysisError), analysis && /* @__PURE__ */ React.createElement("div", { className: "space-y-4 border-t divider pt-4", style: { animation: "fadeIn 0.3s ease-in" } }, parseParagraphSections(analysis).map((para, i) => /* @__PURE__ */ React.createElement("p", { key: i, className: "text-sm text-primary leading-relaxed whitespace-pre-line border-r-4 pr-4", style: { borderColor: theme.solid } }, para)))));
+  }
   function NavAssistant() {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -1002,7 +1131,8 @@
       return () => clearInterval(interval);
     }, []);
     const isDark = mode === "dark" || mode === "system" && systemDark;
-    const theme = TAB_THEMES[activeTab];
+    const isDrillIn = activeTab === "drillin";
+    const theme = isDrillIn ? DRILLIN_THEME : TAB_THEMES[activeTab];
     if (!authed) return /* @__PURE__ */ React.createElement(LoginScreen, { onLogin: () => setAuthed(true), currentPassword: password });
     return /* @__PURE__ */ React.createElement("div", { dir: "rtl", "data-mode": isDark ? "dark" : "light", className: "app-page min-h-screen transition-colors duration-300" }, /* @__PURE__ */ React.createElement(GlobalStyles, null), /* @__PURE__ */ React.createElement("header", { className: "app-nav sticky top-0 z-30 border-b shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(MinistryLogo, { size: 36 }), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-primary hidden sm:block" }, "\u{1F9F3} \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 BI")), /* @__PURE__ */ React.createElement("nav", { className: "flex-1 flex justify-center" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl overflow-x-auto max-w-full", style: { background: "var(--hover-bg)" } }, Object.entries(TAB_THEMES).map(([key, t]) => /* @__PURE__ */ React.createElement(
       "button",
@@ -1012,7 +1142,14 @@
         className: `px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${activeTab === key ? `bg-gradient-to-l ${t.grad} text-white shadow-md` : "text-secondary hoverable"}`
       },
       t.name
-    )))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSidebarOpen(true), className: "p-2 rounded-xl hoverable transition shrink-0 text-secondary" }, "\u2699\uFE0F"))), /* @__PURE__ */ React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4 mb-6", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, theme.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "\u{1F4C5} ", theme.years[0], "\u2013", theme.years[theme.years.length - 1], " \xB7 \u{1F30D} ", countries.length, " \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D1\u05DE\u05D0\u05D2\u05E8")), dataLoading && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "\u{1F504} \u05D8\u05D5\u05E2\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05D4\u05DE\u05D0\u05D2\u05E8..."), dataError && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-red-500" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD: ", dataError, /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary" }, "\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA config.js (SUPABASE_URL / ANON_KEY) \u05D5\u05D0\u05EA \u05DE\u05D3\u05D9\u05E0\u05D9\u05D5\u05EA \u05D4-RLS.")), !dataLoading && !dataError && /* @__PURE__ */ React.createElement(TabContent, { theme, years: theme.years, countries, allMetrics })), /* @__PURE__ */ React.createElement("footer", { className: "text-center text-xs text-muted py-8" }, "\u{1F9F3} \u05DE\u05E2\u05E8\u05DB\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 \u05DE\u05E9\u05E8\u05D3 \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement(SettingsSidebar, { open: sidebarOpen, onClose: () => setSidebarOpen(false), mode, setMode, currentPassword: password, onChangePassword: setPassword, countries, allMetrics, onRefresh: loadData }), /* @__PURE__ */ React.createElement(NavAssistant, null));
+    )), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => setActiveTab("drillin"),
+        className: `px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${isDrillIn ? `bg-gradient-to-l ${DRILLIN_THEME.grad} text-white shadow-md` : "text-secondary hoverable"}`
+      },
+      DRILLIN_THEME.navLabel
+    ))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSidebarOpen(true), className: "p-2 rounded-xl hoverable transition shrink-0 text-secondary" }, "\u2699\uFE0F"))), /* @__PURE__ */ React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" }, !isDrillIn && /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4 mb-6", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, theme.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "\u{1F4C5} ", theme.years[0], "\u2013", theme.years[theme.years.length - 1], " \xB7 \u{1F30D} ", countries.length, " \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D1\u05DE\u05D0\u05D2\u05E8")), isDrillIn && /* @__PURE__ */ React.createElement(SurveyDrillIn, { theme: DRILLIN_THEME }), !isDrillIn && dataLoading && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "\u{1F504} \u05D8\u05D5\u05E2\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05D4\u05DE\u05D0\u05D2\u05E8..."), !isDrillIn && dataError && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-red-500" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD: ", dataError, /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary" }, "\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA config.js (SUPABASE_URL / ANON_KEY) \u05D5\u05D0\u05EA \u05DE\u05D3\u05D9\u05E0\u05D9\u05D5\u05EA \u05D4-RLS.")), !isDrillIn && !dataLoading && !dataError && /* @__PURE__ */ React.createElement(TabContent, { theme, years: theme.years, countries, allMetrics })), /* @__PURE__ */ React.createElement("footer", { className: "text-center text-xs text-muted py-8" }, "\u{1F9F3} \u05DE\u05E2\u05E8\u05DB\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 \u05DE\u05E9\u05E8\u05D3 \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement(SettingsSidebar, { open: sidebarOpen, onClose: () => setSidebarOpen(false), mode, setMode, currentPassword: password, onChangePassword: setPassword, countries, allMetrics, onRefresh: loadData }), /* @__PURE__ */ React.createElement(NavAssistant, null));
   }
   ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
 })();
