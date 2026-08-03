@@ -300,10 +300,30 @@
       .tooltip-i:hover .bubble { display:block; }
       @keyframes fadeIn{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
       @keyframes shake{ 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+      @media print {
+        .app-nav, .no-print, button { display: none !important; }
+        body, .app-page { background: white !important; }
+        .card { break-inside: avoid; border: 1px solid #ccc !important; }
+      }
     `);
   }
   function InfoTip({ text }) {
     return /* @__PURE__ */ React.createElement("span", { className: "tooltip-i text-muted" }, /* @__PURE__ */ React.createElement("span", { style: { width: 15, height: 15, borderRadius: "50%", border: "1px solid currentColor", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" } }, "i"), /* @__PURE__ */ React.createElement("span", { className: "bubble" }, text));
+  }
+  function exportToExcel(filename, sheets) {
+    if (!window.XLSX) {
+      alert("\u05E1\u05E4\u05E8\u05D9\u05D9\u05EA \u05D4\u05D0\u05E7\u05E1\u05DC \u05E2\u05D3\u05D9\u05D9\u05DF \u05E0\u05D8\u05E2\u05E0\u05EA, \u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1 \u05D1\u05E2\u05D5\u05D3 \u05E8\u05D2\u05E2.");
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(({ name, rows }) => {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
+    });
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  }
+  function ExportBar({ onExcel }) {
+    return /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 justify-end no-print" }, /* @__PURE__ */ React.createElement("button", { onClick: onExcel, className: "text-xs px-3 py-1.5 rounded-lg border text-secondary hoverable flex items-center gap-1.5", style: { borderColor: "var(--card-border)" } }, "\u{1F4CA} \u05D9\u05D9\u05E6\u05D5\u05D0 \u05DC\u05D0\u05E7\u05E1\u05DC"), /* @__PURE__ */ React.createElement("button", { onClick: () => window.print(), className: "text-xs px-3 py-1.5 rounded-lg border text-secondary hoverable flex items-center gap-1.5", style: { borderColor: "var(--card-border)" } }, "\u{1F5A8}\uFE0F \u05D9\u05D9\u05E6\u05D5\u05D0 \u05DC-PDF / \u05D4\u05D3\u05E4\u05E1\u05D4"));
   }
   function ChartCanvas({ type, data, options, height = 260 }) {
     const canvasRef = useRef(null);
@@ -584,7 +604,21 @@
         }]
       };
     }, [metrics, theme, country]);
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-md" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F30D} \u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05DC\u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05E2\u05DE\u05D9\u05E7", value: countryName, onChange: setCountryName, countries })), loading && /* @__PURE__ */ React.createElement(AiLoadingState, { name: countryName }), !loading && error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, '\u26A0\uFE0F \u05E0\u05DB\u05E9\u05DC\u05D4 \u05D4\u05E9\u05DC\u05DE\u05EA \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E2\u05D1\u05D5\u05E8 "', countryName, '"'), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, error)), !loading && metrics && country && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-bold text-primary flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, country.flag || "\u{1F310}"), " ", country.name_he, metrics.hasOffice && /* @__PURE__ */ React.createElement("span", { title: "\u05DC\u05E9\u05DB\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4", className: "text-lg" }, "\u2B50")), /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.12), color: theme.solid } }, country.region), estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F6C2}", label: "\u05E1\u05D4\u05F4\u05DB \u05E0\u05DB\u05E0\u05E1\u05D9\u05DD \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC", value: fmtCompact(metrics.sumVisitors), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u2708\uFE0F", label: "\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA \u05DE\u05E6\u05D8\u05D1\u05E8", value: `${fmtNum(metrics.sumOutbound)}M`, accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u2764\uFE0F", label: "\u05D0\u05D4\u05D3\u05D4 \u05E4\u05E8\u05D5-\u05D9\u05E9\u05E8\u05D0\u05DC\u05D9\u05EA", value: `${metrics.sentiment}/100`, tip: "\u05E6\u05D9\u05D5\u05DF \u05DE\u05D7\u05D5\u05E9\u05D1 (\u05DC\u05D0 \u05E1\u05E7\u05E8 \u05D3\u05E2\u05EA \u05E7\u05D4\u05DC \u05D0\u05DE\u05D9\u05EA\u05D9): 60% \u05DE\u05DE\u05D3\u05D3 \u05D7\u05D9\u05E4\u05D5\u05E9 \u05DE\u05E7\u05D5\u05D5\u05DF (online_search_index) + 40% \u05DE\u05DE\u05E6\u05D1 \u05D0\u05D6\u05D4\u05E8\u05EA \u05D4\u05DE\u05E1\u05E2 (\u05EA\u05E7\u05D9\u05DF=100, \u05D0\u05D6\u05D4\u05E8\u05D4=50), \u05D1\u05DE\u05DE\u05D5\u05E6\u05E2 \u05E2\u05DC \u05E4\u05E0\u05D9 \u05D8\u05D5\u05D5\u05D7 \u05D4\u05E9\u05E0\u05D9\u05DD \u05D4\u05E0\u05D1\u05D7\u05E8.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4B9}", label: "\u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (\u05D9\u05E2\u05D9\u05DC\u05D5\u05EA \u05D4\u05DE\u05E8\u05D4)", value: `${metrics.roi}%`, tip: "\u05D0\u05D7\u05D5\u05D6 \u05DE\u05E1\u05DA \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D4\u05D9\u05D5\u05E6\u05D0\u05EA \u05E9\u05DC \u05D4\u05DE\u05D3\u05D9\u05E0\u05D4 \u05E9\u05D4\u05D5\u05DE\u05E8 \u05DC\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05D1\u05E4\u05D5\u05E2\u05DC \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4C8} \u05DE\u05D2\u05DE\u05EA \u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4CA} \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC \u05DE\u05D3\u05D3\u05D9\u05DD"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 100 } } } }))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F54E}", label: "\u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA", value: `${metrics.religiousAffinity}/100`, sub: `\u05D0\u05D5\u05DB' \u05D9\u05D4\u05D5\u05D3\u05D9\u05EA: ${fmtCompact(metrics.avgJewishPop)}`, tip: "\u05DE\u05E0\u05D5\u05E8\u05DE\u05DC \u05E2\u05DC \u05E1\u05D5\u05DC\u05DD \u05DC\u05D5\u05D2\u05E8\u05D9\u05EA\u05DE\u05D9 \u05DE\u05D5\u05DC \u05DB\u05DC \u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D1\u05DE\u05D0\u05D2\u05E8.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4CA}", label: "\u05DE\u05D3\u05D3 HDI \u05DE\u05DE\u05D5\u05E6\u05E2", value: metrics.avgHdi.toFixed(3), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F6EB}", label: "\u05D0\u05D9\u05DB\u05D5\u05EA \u05EA\u05E2\u05D5\u05E4\u05D4 (TTDI)", value: metrics.avgAirQuality.toFixed(1), sub: metrics.hasDirectFlights ? "\u2705 \u05D8\u05D9\u05E1\u05D5\u05EA \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA" : "\u274C \u05D0\u05D9\u05DF \u05D8\u05D9\u05E1\u05D5\u05EA \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F3C6}", label: "\u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC", value: `${metrics.totalScore}/100`, sub: metrics.advisoryYears > 0 ? `\u26A0\uFE0F ${metrics.advisoryYears} \u05E9\u05E0\u05D5\u05EA \u05D0\u05D6\u05D4\u05E8\u05D4` : "\u2705 \u05DC\u05DC\u05D0 \u05D0\u05D6\u05D4\u05E8\u05D5\u05EA", tip: "\u05DE\u05DE\u05D5\u05E6\u05E2 \u05DE\u05E9\u05D5\u05E7\u05DC\u05DC: 35% \u05D0\u05D4\u05D3\u05D4, 25% \u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA, 25% \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA, 15% \u05DE\u05D2\u05DE\u05EA \u05E6\u05DE\u05D9\u05D7\u05D4.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4B5}", label: "\u05EA\u05D5\u05E6\u05E8 \u05DC\u05E0\u05E4\u05E9", value: metrics.avgGdpPerCapita ? `$${fmtNum(metrics.avgGdpPerCapita)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F9F3}", label: "\u05D4\u05D5\u05E6\u05D0\u05D4 \u05DE\u05DE\u05D5\u05E6\u05E2\u05EA \u05DC\u05E0\u05E1\u05D9\u05E2\u05D4", value: metrics.avgExpenditurePerTrip ? `$${fmtNum(metrics.avgExpenditurePerTrip)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u271D\uFE0F", label: "\u05D0\u05D5\u05DB\u05DC\u05D5\u05E1\u05D9\u05D9\u05D4 \u05D0\u05D5\u05D5\u05E0\u05D2\u05DC\u05D9\u05E1\u05D8\u05D9\u05EA", value: fmtCompact(metrics.avgEvangelicalPop), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4CD}", label: "\u05DE\u05E8\u05D7\u05E7 \u05DE\u05D9\u05E9\u05E8\u05D0\u05DC", value: country.Distance ? `${fmtNum(country.Distance)} \u05E7"\u05DE` : "-", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement(CouncilAnalysis, { key: country.name_he, country, metrics, theme }), metrics.hasOffice && /* @__PURE__ */ React.createElement(OfficeContributionAnalysis, { key: `office-${country.name_he}`, country, metrics, countries, allMetrics, years, theme }), /* @__PURE__ */ React.createElement(CompetitorAnalysis, { key: `comp-${country.name_he}`, country, theme })));
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-md" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F30D} \u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05DC\u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05E2\u05DE\u05D9\u05E7", value: countryName, onChange: setCountryName, countries })), loading && /* @__PURE__ */ React.createElement(AiLoadingState, { name: countryName }), !loading && error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, '\u26A0\uFE0F \u05E0\u05DB\u05E9\u05DC\u05D4 \u05D4\u05E9\u05DC\u05DE\u05EA \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E2\u05D1\u05D5\u05E8 "', countryName, '"'), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, error)), !loading && metrics && country && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, { onExcel: () => exportToExcel(`${country.name_he}-\u05E0\u05D9\u05EA\u05D5\u05D7`, [
+      { name: "\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E9\u05E0\u05EA\u05D9\u05D9\u05DD", rows: years.map((y) => ({ \u05E9\u05E0\u05D4: y, "\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC (\u05D0\u05DC\u05E4\u05D9\u05DD)": (metrics.visitorsByYear[y] || 0) / 1e3 })) },
+      { name: "\u05E1\u05D9\u05DB\u05D5\u05DD KPI", rows: [{
+        \u05DE\u05D3\u05D9\u05E0\u05D4: country.name_he,
+        "\u05E1\u05D4\u05F4\u05DB \u05E0\u05DB\u05E0\u05E1\u05D9\u05DD": metrics.sumVisitors,
+        "\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA": metrics.sumOutbound,
+        "\u05D0\u05D4\u05D3\u05D4 \u05E4\u05E8\u05D5-\u05D9\u05E9\u05E8\u05D0\u05DC\u05D9\u05EA": metrics.sentiment,
+        "\u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA %": metrics.roi,
+        "\u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA": metrics.religiousAffinity,
+        "\u05DE\u05D2\u05DE\u05EA \u05E6\u05DE\u05D9\u05D7\u05D4": metrics.growthTrend,
+        "\u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC": metrics.totalScore,
+        "\u05EA\u05D5\u05E6\u05E8 \u05DC\u05E0\u05E4\u05E9": metrics.avgGdpPerCapita,
+        '\u05DE\u05E8\u05D7\u05E7 \u05DE\u05D9\u05E9\u05E8\u05D0\u05DC (\u05E7"\u05DE)': country.Distance
+      }] }
+    ]) }), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-bold text-primary flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, country.flag || "\u{1F310}"), " ", country.name_he, metrics.hasOffice && /* @__PURE__ */ React.createElement("span", { title: "\u05DC\u05E9\u05DB\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4", className: "text-lg" }, "\u2B50")), /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.12), color: theme.solid } }, country.region), estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F6C2}", label: "\u05E1\u05D4\u05F4\u05DB \u05E0\u05DB\u05E0\u05E1\u05D9\u05DD \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC", value: fmtCompact(metrics.sumVisitors), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u2708\uFE0F", label: "\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA \u05DE\u05E6\u05D8\u05D1\u05E8", value: `${fmtNum(metrics.sumOutbound)}M`, accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u2764\uFE0F", label: "\u05D0\u05D4\u05D3\u05D4 \u05E4\u05E8\u05D5-\u05D9\u05E9\u05E8\u05D0\u05DC\u05D9\u05EA", value: `${metrics.sentiment}/100`, tip: "\u05E6\u05D9\u05D5\u05DF \u05DE\u05D7\u05D5\u05E9\u05D1 (\u05DC\u05D0 \u05E1\u05E7\u05E8 \u05D3\u05E2\u05EA \u05E7\u05D4\u05DC \u05D0\u05DE\u05D9\u05EA\u05D9): 60% \u05DE\u05DE\u05D3\u05D3 \u05D7\u05D9\u05E4\u05D5\u05E9 \u05DE\u05E7\u05D5\u05D5\u05DF (online_search_index) + 40% \u05DE\u05DE\u05E6\u05D1 \u05D0\u05D6\u05D4\u05E8\u05EA \u05D4\u05DE\u05E1\u05E2 (\u05EA\u05E7\u05D9\u05DF=100, \u05D0\u05D6\u05D4\u05E8\u05D4=50), \u05D1\u05DE\u05DE\u05D5\u05E6\u05E2 \u05E2\u05DC \u05E4\u05E0\u05D9 \u05D8\u05D5\u05D5\u05D7 \u05D4\u05E9\u05E0\u05D9\u05DD \u05D4\u05E0\u05D1\u05D7\u05E8.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4B9}", label: "\u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (\u05D9\u05E2\u05D9\u05DC\u05D5\u05EA \u05D4\u05DE\u05E8\u05D4)", value: `${metrics.roi}%`, tip: "\u05D0\u05D7\u05D5\u05D6 \u05DE\u05E1\u05DA \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D4\u05D9\u05D5\u05E6\u05D0\u05EA \u05E9\u05DC \u05D4\u05DE\u05D3\u05D9\u05E0\u05D4 \u05E9\u05D4\u05D5\u05DE\u05E8 \u05DC\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05D1\u05E4\u05D5\u05E2\u05DC \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4C8} \u05DE\u05D2\u05DE\u05EA \u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4CA} \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC \u05DE\u05D3\u05D3\u05D9\u05DD"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 100 } } } }))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F54E}", label: "\u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA", value: `${metrics.religiousAffinity}/100`, sub: `\u05D0\u05D5\u05DB' \u05D9\u05D4\u05D5\u05D3\u05D9\u05EA: ${fmtCompact(metrics.avgJewishPop)}`, tip: "\u05DE\u05E0\u05D5\u05E8\u05DE\u05DC \u05E2\u05DC \u05E1\u05D5\u05DC\u05DD \u05DC\u05D5\u05D2\u05E8\u05D9\u05EA\u05DE\u05D9 \u05DE\u05D5\u05DC \u05DB\u05DC \u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D1\u05DE\u05D0\u05D2\u05E8.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4CA}", label: "\u05DE\u05D3\u05D3 HDI \u05DE\u05DE\u05D5\u05E6\u05E2", value: metrics.avgHdi.toFixed(3), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F6EB}", label: "\u05D0\u05D9\u05DB\u05D5\u05EA \u05EA\u05E2\u05D5\u05E4\u05D4 (TTDI)", value: metrics.avgAirQuality.toFixed(1), sub: metrics.hasDirectFlights ? "\u2705 \u05D8\u05D9\u05E1\u05D5\u05EA \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA" : "\u274C \u05D0\u05D9\u05DF \u05D8\u05D9\u05E1\u05D5\u05EA \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F3C6}", label: "\u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC", value: `${metrics.totalScore}/100`, sub: metrics.advisoryYears > 0 ? `\u26A0\uFE0F ${metrics.advisoryYears} \u05E9\u05E0\u05D5\u05EA \u05D0\u05D6\u05D4\u05E8\u05D4` : "\u2705 \u05DC\u05DC\u05D0 \u05D0\u05D6\u05D4\u05E8\u05D5\u05EA", tip: "\u05DE\u05DE\u05D5\u05E6\u05E2 \u05DE\u05E9\u05D5\u05E7\u05DC\u05DC: 35% \u05D0\u05D4\u05D3\u05D4, 25% \u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA, 25% \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA, 15% \u05DE\u05D2\u05DE\u05EA \u05E6\u05DE\u05D9\u05D7\u05D4.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4B5}", label: "\u05EA\u05D5\u05E6\u05E8 \u05DC\u05E0\u05E4\u05E9", value: metrics.avgGdpPerCapita ? `$${fmtNum(metrics.avgGdpPerCapita)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F9F3}", label: "\u05D4\u05D5\u05E6\u05D0\u05D4 \u05DE\u05DE\u05D5\u05E6\u05E2\u05EA \u05DC\u05E0\u05E1\u05D9\u05E2\u05D4", value: metrics.avgExpenditurePerTrip ? `$${fmtNum(metrics.avgExpenditurePerTrip)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u271D\uFE0F", label: "\u05D0\u05D5\u05DB\u05DC\u05D5\u05E1\u05D9\u05D9\u05D4 \u05D0\u05D5\u05D5\u05E0\u05D2\u05DC\u05D9\u05E1\u05D8\u05D9\u05EA", value: fmtCompact(metrics.avgEvangelicalPop), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "\u{1F4CD}", label: "\u05DE\u05E8\u05D7\u05E7 \u05DE\u05D9\u05E9\u05E8\u05D0\u05DC", value: country.Distance ? `${fmtNum(country.Distance)} \u05E7"\u05DE` : "-", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement(CouncilAnalysis, { key: country.name_he, country, metrics, theme }), metrics.hasOffice && /* @__PURE__ */ React.createElement(OfficeContributionAnalysis, { key: `office-${country.name_he}`, country, metrics, countries, allMetrics, years, theme }), /* @__PURE__ */ React.createElement(CompetitorAnalysis, { key: `comp-${country.name_he}`, country, theme })));
   }
   const COUNCIL_SECTIONS = [
     { key: "executive_summary", label: "\u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD", emoji: "\u{1F4CB}" },
@@ -651,7 +685,16 @@
         datasets: [{ data: [r1.metrics.roi, r2.metrics.roi], backgroundColor: [theme.solid, "#94a3b8"], borderRadius: 6 }]
       };
     }, [r1.metrics, r2.metrics, c1, c2, theme]);
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-4 max-w-2xl" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E6} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D0'", value: c1, onChange: setC1, countries, exclude: [c2] }), /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E7} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D1'", value: c2, onChange: setC2, countries, exclude: [c1] })), (r1.loading || r2.loading) && /* @__PURE__ */ React.createElement(AiLoadingState, { name: r1.loading ? c1 : c2 }), !r1.loading && !r2.loading && (r1.error || r2.error) && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, "\u26A0\uFE0F \u05E0\u05DB\u05E9\u05DC\u05D4 \u05D4\u05E9\u05DC\u05DE\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, r1.error || r2.error)), !r1.loading && !r2.loading && r1.metrics && r2.metrics && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-6 flex-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_c = r1.country) == null ? void 0 : _c.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c1), r1.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_d = r2.country) == null ? void 0 : _d.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c2), r2.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4C8} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D2\u05DE\u05EA \u05DE\u05D1\u05E7\u05E8\u05D9\u05DD"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u2696\uFE0F \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D3\u05D3\u05D9\u05DD \u05DE\u05E8\u05DB\u05D6\u05D9\u05D9\u05DD (\u05E1\u05D5\u05DC\u05DD 0-100)"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm flex items-center gap-1.5" }, "\u{1F4B9} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (%)", /* @__PURE__ */ React.createElement(InfoTip, { text: "\u05DE\u05D5\u05E6\u05D2 \u05D1\u05D2\u05E8\u05E3 \u05E0\u05E4\u05E8\u05D3 \u05DB\u05D9 \u05E1\u05D5\u05DC\u05DD \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05DC\u05D5 \u05E7\u05D8\u05DF \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05EA \u05DE\u05E9\u05D0\u05E8 \u05D4\u05DE\u05D3\u05D3\u05D9\u05DD (\u05D1\u05D3\u05E8\u05DA \u05DB\u05DC\u05DC \u05E4\u05D7\u05D5\u05EA \u05DE-1-2%)." })), roiChartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: roiChartData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })))));
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-4 max-w-2xl" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E6} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D0'", value: c1, onChange: setC1, countries, exclude: [c2] }), /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E7} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D1'", value: c2, onChange: setC2, countries, exclude: [c1] })), (r1.loading || r2.loading) && /* @__PURE__ */ React.createElement(AiLoadingState, { name: r1.loading ? c1 : c2 }), !r1.loading && !r2.loading && (r1.error || r2.error) && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, "\u26A0\uFE0F \u05E0\u05DB\u05E9\u05DC\u05D4 \u05D4\u05E9\u05DC\u05DE\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, r1.error || r2.error)), !r1.loading && !r2.loading && r1.metrics && r2.metrics && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, { onExcel: () => exportToExcel(`\u05D4\u05E9\u05D5\u05D5\u05D0\u05D4-${c1}-${c2}`, [
+      { name: "\u05DE\u05D2\u05DE\u05EA \u05DE\u05D1\u05E7\u05E8\u05D9\u05DD", rows: years.map((y) => ({ \u05E9\u05E0\u05D4: y, [c1]: Math.round(r1.metrics.visitorsByYear[y] || 0), [c2]: Math.round(r2.metrics.visitorsByYear[y] || 0) })) },
+      { name: "\u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D3\u05D3\u05D9\u05DD", rows: [
+        { \u05DE\u05D3\u05D3: "\u05D0\u05D4\u05D3\u05D4", [c1]: r1.metrics.sentiment, [c2]: r2.metrics.sentiment },
+        { \u05DE\u05D3\u05D3: "\u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA", [c1]: r1.metrics.religiousAffinity, [c2]: r2.metrics.religiousAffinity },
+        { \u05DE\u05D3\u05D3: "\u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA %", [c1]: r1.metrics.roi, [c2]: r2.metrics.roi },
+        { \u05DE\u05D3\u05D3: "\u05E6\u05DE\u05D9\u05D7\u05D4", [c1]: r1.metrics.growthTrend, [c2]: r2.metrics.growthTrend },
+        { \u05DE\u05D3\u05D3: "\u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC", [c1]: r1.metrics.totalScore, [c2]: r2.metrics.totalScore }
+      ] }
+    ]) }), /* @__PURE__ */ React.createElement("div", { className: "flex gap-6 flex-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_c = r1.country) == null ? void 0 : _c.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c1), r1.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_d = r2.country) == null ? void 0 : _d.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c2), r2.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4C8} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D2\u05DE\u05EA \u05DE\u05D1\u05E7\u05E8\u05D9\u05DD"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u2696\uFE0F \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D3\u05D3\u05D9\u05DD \u05DE\u05E8\u05DB\u05D6\u05D9\u05D9\u05DD (\u05E1\u05D5\u05DC\u05DD 0-100)"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm flex items-center gap-1.5" }, "\u{1F4B9} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (%)", /* @__PURE__ */ React.createElement(InfoTip, { text: "\u05DE\u05D5\u05E6\u05D2 \u05D1\u05D2\u05E8\u05E3 \u05E0\u05E4\u05E8\u05D3 \u05DB\u05D9 \u05E1\u05D5\u05DC\u05DD \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05DC\u05D5 \u05E7\u05D8\u05DF \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05EA \u05DE\u05E9\u05D0\u05E8 \u05D4\u05DE\u05D3\u05D3\u05D9\u05DD (\u05D1\u05D3\u05E8\u05DA \u05DB\u05DC\u05DC \u05E4\u05D7\u05D5\u05EA \u05DE-1-2%)." })), roiChartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: roiChartData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })))));
   }
   function RankingAnalysis({ years, theme, countries, allMetrics }) {
     const [selected, setSelected] = useState(countries.slice(0, 5).map((c) => c.name_he));
@@ -696,6 +739,32 @@
         return next;
       });
     };
+    const withMetrics = useMemo(() => countries.map((c) => {
+      const rows = allMetrics.filter((m) => m.country_id === c.id);
+      const metrics = deriveMetrics(rows, years);
+      return metrics ? { country: c, metrics } : null;
+    }).filter(Boolean), [countries, allMetrics, years]);
+    const regionsAvailable = useMemo(() => {
+      const set = new Set(countries.map((c) => c.region).filter(Boolean));
+      return Array.from(set);
+    }, [countries]);
+    const applyFilter = (names) => setSelected(names.slice(0, 10));
+    const filterByRegion = (region) => applyFilter(countries.filter((c) => c.region === region).map((c) => c.name_he));
+    const filterPremium = () => {
+      const hdiVals = withMetrics.map((e) => e.metrics.avgHdi).sort((a, b) => a - b);
+      const median = hdiVals[Math.floor(hdiVals.length / 2)] || 0;
+      applyFilter(withMetrics.filter((e) => e.metrics.avgHdi >= median).map((e) => e.country.name_he));
+    };
+    const filterEmerging = () => {
+      const hdiVals = withMetrics.map((e) => e.metrics.avgHdi).sort((a, b) => a - b);
+      const median = hdiVals[Math.floor(hdiVals.length / 2)] || 0;
+      applyFilter(withMetrics.filter((e) => e.metrics.avgHdi < median).map((e) => e.country.name_he));
+    };
+    const filterReligious = () => {
+      const sorted = [...withMetrics].sort((a, b) => b.metrics.religiousAffinity - a.metrics.religiousAffinity);
+      applyFilter(sorted.slice(0, Math.max(3, Math.ceil(sorted.length / 3))).map((e) => e.country.name_he));
+    };
+    const filterWithOffice = () => applyFilter(withMetrics.filter((e) => e.metrics.hasOffice).map((e) => e.country.name_he));
     const dbSuggestions = countries.filter((c) => !selected.includes(c.name_he) && c.name_he.includes(pending.trim()));
     const dbNamesSet = new Set(countries.map((c) => c.name_he));
     const worldSuggestions = pending.trim() ? WORLD_COUNTRIES_HE.filter((c) => c.name_he.includes(pending.trim()) && !dbNamesSet.has(c.name_he) && !selected.includes(c.name_he)).filter((c, i, arr) => arr.findIndex((x) => x.name_he === c.name_he) === i) : [];
@@ -712,7 +781,10 @@
     const paramMeta = RANK_PARAMS.find((p) => p.key === param);
     const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
     const readyToShow = selected.length >= 3 && ranked.length > 0;
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1.5" }, "\u{1F30D} \u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DC\u05D3\u05D9\u05E8\u05D5\u05D2 (3-10)"), /* @__PURE__ */ React.createElement("div", { className: "relative mb-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-2" }, "\u{1F9ED} \u05D1\u05D7\u05D9\u05E8\u05D4 \u05DE\u05D4\u05D9\u05E8\u05D4 \u05DC\u05E4\u05D9 \u05E1\u05D9\u05E0\u05D5\u05DF"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2" }, regionsAvailable.map((r) => {
+      var _a;
+      return /* @__PURE__ */ React.createElement("button", { key: r, onClick: () => filterByRegion(r), className: "text-xs px-3 py-1.5 rounded-full border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "\u{1F30D} ", ((_a = REGION_OPTIONS.find((o) => o.value === r)) == null ? void 0 : _a.label) || r);
+    }), /* @__PURE__ */ React.createElement("button", { onClick: filterPremium, className: "text-xs px-3 py-1.5 rounded-full border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "\u{1F3C6} \u05E9\u05D5\u05D5\u05E7\u05D9 \u05E4\u05E8\u05D9\u05DE\u05D9\u05D5\u05DD (HDI \u05D2\u05D1\u05D5\u05D4)"), /* @__PURE__ */ React.createElement("button", { onClick: filterEmerging, className: "text-xs px-3 py-1.5 rounded-full border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "\u{1F331} \u05E9\u05D5\u05D5\u05E7\u05D9\u05DD \u05DE\u05EA\u05E4\u05EA\u05D7\u05D9\u05DD"), /* @__PURE__ */ React.createElement("button", { onClick: filterReligious, className: "text-xs px-3 py-1.5 rounded-full border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "\u{1F54E} \u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA \u05D2\u05D1\u05D5\u05D4\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: filterWithOffice, className: "text-xs px-3 py-1.5 rounded-full border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "\u2B50 \u05E2\u05DD \u05DC\u05E9\u05DB\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2" }, "\u05DC\u05D7\u05D9\u05E6\u05D4 \u05DE\u05D7\u05DC\u05D9\u05E4\u05D4 \u05D0\u05EA \u05D4\u05D1\u05D7\u05D9\u05E8\u05D4 \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9\u05EA \u05D1\u05E8\u05E9\u05D9\u05DE\u05EA \u05D4\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D4\u05DE\u05EA\u05D0\u05D9\u05DE\u05D5\u05EA \u05DC\u05E1\u05D9\u05E0\u05D5\u05DF (\u05E2\u05D3 10).")), /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1.5" }, "\u{1F30D} \u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DC\u05D3\u05D9\u05E8\u05D5\u05D2 (3-10)"), /* @__PURE__ */ React.createElement("div", { className: "relative mb-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
       "input",
       {
         value: pending,
@@ -738,7 +810,18 @@
         style: param !== p.key ? { borderColor: "var(--card-border)" } : {}
       },
       p.label
-    ))))), stillLoading.length > 0 && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary" }, "\u{1F504} \u05DE\u05E9\u05DC\u05D9\u05DD \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E2\u05D1\u05D5\u05E8: ", stillLoading.join(", "), "..."), readyToShow && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-4 text-sm" }, "\u{1F3C6} \u05D3\u05D9\u05E8\u05D5\u05D2 \u05DC\u05E4\u05D9 ", paramMeta == null ? void 0 : paramMeta.label), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, ranked.map((r, i) => /* @__PURE__ */ React.createElement("div", { key: r.name, className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "w-7 text-center" }, i < 3 ? medals[i] : /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary" }, i + 1)), /* @__PURE__ */ React.createElement("div", { className: "w-32 shrink-0 text-sm font-medium text-primary truncate" }, r.name, " ", r.estimated && "\u2728"), /* @__PURE__ */ React.createElement("div", { className: "flex-1 rounded-full h-6 relative overflow-hidden", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full flex items-center justify-end px-2", style: { width: `${Math.max(4, r.metrics[param] / maxVal * 100)}%`, background: theme.solid } }, /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold text-white" }, r.metrics[param].toFixed(1))))))), ranked.some((r) => r.estimated) && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-3 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", null, "\u2728"), " \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D4\u05DE\u05E1\u05D5\u05DE\u05E0\u05D5\u05EA \u05D4\u05D5\u05E9\u05DC\u05DE\u05D5 \u05E2\u05DC \u05D9\u05D3\u05D9 AI (\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05D1\u05DE\u05D0\u05D2\u05E8 \u05D4\u05DE\u05E7\u05D5\u05E8\u05D9)"))), /* @__PURE__ */ React.createElement(RegressionAnalysis, { years, theme, allMetrics, countries }));
+    ))))), stillLoading.length > 0 && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary" }, "\u{1F504} \u05DE\u05E9\u05DC\u05D9\u05DD \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E2\u05D1\u05D5\u05E8: ", stillLoading.join(", "), "..."), readyToShow && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, { onExcel: () => exportToExcel(`\u05D3\u05D9\u05E8\u05D5\u05D2-${(paramMeta == null ? void 0 : paramMeta.label) || param}`, [
+      { name: "\u05D3\u05D9\u05E8\u05D5\u05D2", rows: ranked.map((r, i) => ({
+        \u05DE\u05E7\u05D5\u05DD: i + 1,
+        \u05DE\u05D3\u05D9\u05E0\u05D4: r.name,
+        "\u05D0\u05D4\u05D3\u05D4": r.metrics.sentiment,
+        "\u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA": r.metrics.religiousAffinity,
+        "\u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA %": r.metrics.roi,
+        "\u05E6\u05DE\u05D9\u05D7\u05D4": r.metrics.growthTrend,
+        "\u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC": r.metrics.totalScore,
+        "\u05DE\u05D5\u05E2\u05E8\u05DA AI": r.estimated ? "\u05DB\u05DF" : "\u05DC\u05D0"
+      })) }
+    ]) }), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-4 text-sm" }, "\u{1F3C6} \u05D3\u05D9\u05E8\u05D5\u05D2 \u05DC\u05E4\u05D9 ", paramMeta == null ? void 0 : paramMeta.label), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, ranked.map((r, i) => /* @__PURE__ */ React.createElement("div", { key: r.name, className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "w-7 text-center" }, i < 3 ? medals[i] : /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary" }, i + 1)), /* @__PURE__ */ React.createElement("div", { className: "w-32 shrink-0 text-sm font-medium text-primary truncate" }, r.name, " ", r.estimated && "\u2728"), /* @__PURE__ */ React.createElement("div", { className: "flex-1 rounded-full h-6 relative overflow-hidden", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("div", { className: "h-full rounded-full flex items-center justify-end px-2", style: { width: `${Math.max(4, r.metrics[param] / maxVal * 100)}%`, background: theme.solid } }, /* @__PURE__ */ React.createElement("span", { className: "text-xs font-bold text-white" }, r.metrics[param].toFixed(1))))))), ranked.some((r) => r.estimated) && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-3 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", null, "\u2728"), " \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D4\u05DE\u05E1\u05D5\u05DE\u05E0\u05D5\u05EA \u05D4\u05D5\u05E9\u05DC\u05DE\u05D5 \u05E2\u05DC \u05D9\u05D3\u05D9 AI (\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05D1\u05DE\u05D0\u05D2\u05E8 \u05D4\u05DE\u05E7\u05D5\u05E8\u05D9)"))), /* @__PURE__ */ React.createElement(RegressionAnalysis, { years, theme, allMetrics, countries }));
   }
   function RegressionAnalysis({ years, theme, allMetrics, countries }) {
     const [selectedIds, setSelectedIds] = useState(() => countries.map((c) => c.id));
@@ -811,14 +894,35 @@
     )), explainError && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", explainError), explanation && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, explanation), !explanation && !loadingExplain && !explainError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, '\u05DC\u05D7\u05E5 "\u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7" \u05DB\u05D3\u05D9 \u05DC\u05E7\u05D1\u05DC \u05D4\u05E1\u05D1\u05E8 \u05DE\u05E0\u05D5\u05E1\u05D7 \u05DE-AI \u05E2\u05DC \u05D4\u05DE\u05E9\u05DE\u05E2\u05D5\u05EA \u05E9\u05DC \u05D4\u05EA\u05D5\u05E6\u05D0\u05D5\u05EA.'))));
   }
   function findComparableCountries(targetCountry, targetMetrics, countries, allMetrics, years, n = 3) {
-    const candidates = countries.filter((c) => c.id !== targetCountry.id);
-    const scored = candidates.map((c) => {
+    const candidates = countries.map((c) => {
       const rows = allMetrics.filter((m) => m.country_id === c.id);
       const metrics = deriveMetrics(rows, years);
-      if (!metrics || metrics.hasOffice) return null;
-      const dist = Math.abs(metrics.sumOutbound - targetMetrics.sumOutbound) / (targetMetrics.sumOutbound || 1);
-      return { country: c, metrics, dist };
+      if (!metrics) return null;
+      return { country: c, metrics };
     }).filter(Boolean);
+    const pool = candidates.filter((c) => c.country.id !== targetCountry.id);
+    const targetEntry = { country: targetCountry, metrics: targetMetrics };
+    const all = [...pool, targetEntry];
+    const dims = [
+      { get: (e) => e.metrics.avgHdi },
+      { get: (e) => e.metrics.avgGdpPerCapita || 0 },
+      { get: (e) => e.metrics.sumOutbound / years.length },
+      // avg per year, so range length doesn't skew it
+      { get: (e) => e.country.Distance || 0 }
+    ];
+    const stats = dims.map((d) => {
+      const vals = all.map(d.get);
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const variance = vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length;
+      return { mean, std: Math.sqrt(variance) || 1 };
+    });
+    const zVector = (e) => dims.map((d, i) => (d.get(e) - stats[i].mean) / stats[i].std);
+    const targetZ = zVector(targetEntry);
+    const scored = pool.filter((e) => !e.metrics.hasOffice).map((e) => {
+      const z = zVector(e);
+      const dist = Math.sqrt(z.reduce((s, v, i) => s + (v - targetZ[i]) ** 2, 0));
+      return { country: e.country, metrics: e.metrics, dist };
+    });
     scored.sort((a, b) => a.dist - b.dist);
     return scored.slice(0, n);
   }
@@ -847,568 +951,4 @@
     if (comparables.length === 0) {
       return null;
     }
-    return /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, "\u{1F3E2} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05EA\u05E8\u05D5\u05DE\u05EA \u05DC\u05E9\u05DB\u05D4 \u2014 ", country.name_he, " \u2B50", /* @__PURE__ */ React.createElement(InfoTip, { text: "\u05D1\u05D5\u05D3\u05E7 \u05D0\u05DD \u05E7\u05D9\u05D5\u05DD \u05DC\u05E9\u05DB\u05EA \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05E4\u05E2\u05D9\u05DC\u05D4 \u05D1\u05DE\u05D3\u05D9\u05E0\u05D4 \u05D6\u05D5 \u05DE\u05EA\u05D5\u05E8\u05D2\u05DD \u05DC\u05D9\u05D5\u05EA\u05E8 \u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05EA\u05D9\u05D9\u05E8\u05D9\u05DD \u05D1\u05D9\u05D7\u05E1 \u05DC\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D3\u05D5\u05DE\u05D5\u05EA \u05D1\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA, \u05E9\u05D0\u05D9\u05DF \u05D1\u05D4\u05DF \u05DC\u05E9\u05DB\u05D4." })), /* @__PURE__ */ React.createElement("button", { onClick: run, disabled: loading, className: `px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50` }, loading ? "\u{1F504} \u05DE\u05E0\u05EA\u05D7..." : text ? "\u{1F504} \u05D4\u05E8\u05E5 \u05DE\u05D7\u05D3\u05E9" : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mb-3" }, "\u05DE\u05D5\u05E9\u05D5\u05D5\u05D4 \u05DE\u05D5\u05DC: ", comparables.map((c) => `${c.country.flag || ""} ${c.country.name_he}`).join(", "), " (\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DC\u05DC\u05D0 \u05DC\u05E9\u05DB\u05D4, \u05D1\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA \u05D3\u05D5\u05DE\u05D4)"), /* @__PURE__ */ React.createElement("div", { className: "grid gap-2 mb-3", style: { gridTemplateColumns: `repeat(${comparables.length + 1}, minmax(0,1fr))` } }, /* @__PURE__ */ React.createElement("div", { className: "text-center p-2 rounded-lg", style: { background: hexA(theme.solid, 0.12) } }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-secondary" }, country.name_he, " \u2B50"), /* @__PURE__ */ React.createElement("div", { className: "font-bold text-primary text-sm" }, metrics.roi, "%")), comparables.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.country.id, className: "text-center p-2 rounded-lg", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-secondary" }, c.country.name_he), /* @__PURE__ */ React.createElement("div", { className: "font-bold text-primary text-sm" }, c.metrics.roi, "%")))), error && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", error), text && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, text), !text && !loading && !error && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, '\u05DC\u05D7\u05E5 "\u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7" \u05DC\u05E7\u05D1\u05DC\u05EA \u05D4\u05E2\u05E8\u05DB\u05D4 \u05DE\u05E0\u05D5\u05DE\u05E7\u05EA \u05E9\u05DC \u05EA\u05E8\u05D5\u05DE\u05EA \u05D4\u05DC\u05E9\u05DB\u05D4, \u05D1\u05D6\u05D4\u05D9\u05E8\u05D5\u05EA \u05D4\u05DE\u05EA\u05D1\u05E7\u05E9\u05EA \u05DE\u05DE\u05D3\u05D2\u05DD \u05E7\u05D8\u05DF.'));
-  }
-  const SUGGESTED_COMPETITORS = ["\u05D9\u05D5\u05D5\u05DF", "\u05E7\u05E4\u05E8\u05D9\u05E1\u05D9\u05DF", "\u05DE\u05E6\u05E8\u05D9\u05DD", "\u05D9\u05E8\u05D3\u05DF", "\u05D0\u05D9\u05D8\u05DC\u05D9\u05D4", "\u05E1\u05E4\u05E8\u05D3", "\u05D8\u05D5\u05E8\u05E7\u05D9\u05D4", "\u05E4\u05D5\u05E8\u05D8\u05D5\u05D2\u05DC", "\u05DE\u05E8\u05D5\u05E7\u05D5"];
-  function CompetitorAnalysis({ country, theme }) {
-    const [selected, setSelected] = useState(["\u05D9\u05D5\u05D5\u05DF", "\u05E7\u05E4\u05E8\u05D9\u05E1\u05D9\u05DF", "\u05D0\u05D9\u05D8\u05DC\u05D9\u05D4"]);
-    const [pending, setPending] = useState("");
-    const [results, setResults] = useState({});
-    const toggle = (name) => setSelected((s) => s.includes(name) ? s.filter((n) => n !== name) : s.length < 6 ? [...s, name] : s);
-    const addCustom = () => {
-      const name = pending.trim();
-      if (name && !selected.includes(name) && selected.length < 6) setSelected((s) => [...s, name]);
-      setPending("");
-    };
-    const runAll = async () => {
-      for (const competitor of selected) {
-        setResults((prev) => __spreadProps(__spreadValues({}, prev), { [competitor]: { loading: true } }));
-        try {
-          const res = await DataAPI.generateInsight("competitor_analysis", { source_country: country.name_he, competitor });
-          setResults((prev) => __spreadProps(__spreadValues({}, prev), { [competitor]: { text: sanitizeAiText(res.text) } }));
-        } catch (err) {
-          setResults((prev) => __spreadProps(__spreadValues({}, prev), { [competitor]: { error: String(err.message || err) } }));
-        }
-      }
-    };
-    const anyLoading = Object.values(results).some((r) => r == null ? void 0 : r.loading);
-    return /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm space-y-4" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, "\u2694\uFE0F \u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05EA\u05D7\u05E8\u05D9\u05DD \u05D3\u05D9\u05E0\u05DE\u05D9 \u2014 \u05DE\u05D9 \u05DE\u05EA\u05D7\u05E8\u05D4 \u05D1\u05D9\u05E9\u05E8\u05D0\u05DC \u05E2\u05DC \u05EA\u05D9\u05D9\u05E8\u05D9\u05DD \u05DE-", country.name_he), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mb-2" }, "\u05D1\u05D7\u05E8 \u05E2\u05D3 6 \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DE\u05EA\u05D7\u05E8\u05D5\u05EA (\u05D4\u05E6\u05E2\u05D5\u05EA \u05D0\u05D6\u05D5\u05E8\u05D9\u05D5\u05EA/\u05D3\u05EA\u05D9\u05D5\u05EA-\u05EA\u05E8\u05D1\u05D5\u05EA\u05D9\u05D5\u05EA, \u05D0\u05D5 \u05D4\u05D5\u05E1\u05E3 \u05DE\u05E9\u05DC\u05DA):"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2 mb-2" }, SUGGESTED_COMPETITORS.map((c) => /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        key: c,
-        onClick: () => toggle(c),
-        className: "text-xs px-3 py-1.5 rounded-full border font-medium transition",
-        style: selected.includes(c) ? { background: theme.solid, color: "white", borderColor: theme.solid } : { borderColor: "var(--card-border)", color: "var(--text-secondary)" }
-      },
-      c
-    ))), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        value: pending,
-        onChange: (e) => setPending(e.target.value),
-        onKeyDown: (e) => e.key === "Enter" && addCustom(),
-        placeholder: "\u05D4\u05D5\u05E1\u05E3 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05DE\u05EA\u05D7\u05E8\u05D4 \u05E0\u05D5\u05E1\u05E4\u05EA...",
-        className: "input-field flex-1 border rounded-lg px-3 py-2 text-sm"
-      }
-    ), /* @__PURE__ */ React.createElement("button", { onClick: addCustom, className: "px-3 py-2 rounded-lg bg-blue-700 text-white text-sm" }, "\u2795"))), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: runAll,
-        disabled: anyLoading || selected.length === 0,
-        className: `px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50`
-      },
-      anyLoading ? "\u{1F504} \u05DE\u05E0\u05EA\u05D7..." : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7"
-    ), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, selected.map((c) => {
-      const r = results[c];
-      if (!r) return null;
-      return /* @__PURE__ */ React.createElement("div", { key: c, className: "border rounded-xl p-4 divider" }, /* @__PURE__ */ React.createElement("h5", { className: "font-semibold text-primary text-sm mb-2" }, "\u{1F19A} ", c), r.loading && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary" }, "\u{1F504} \u05DE\u05E0\u05EA\u05D7..."), r.error && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-red-500" }, "\u26A0\uFE0F ", r.error), r.text && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, r.text));
-    })));
-  }
-  const REGION_OPTIONS = [
-    { value: "Europe", label: "\u05D0\u05D9\u05E8\u05D5\u05E4\u05D4 (Europe)" },
-    { value: "North America", label: "\u05E6\u05E4\u05D5\u05DF \u05D0\u05DE\u05E8\u05D9\u05E7\u05D4 (North America)" },
-    { value: "South America", label: "\u05D3\u05E8\u05D5\u05DD \u05D0\u05DE\u05E8\u05D9\u05E7\u05D4 (South America)" },
-    { value: "Americas", label: "\u05D9\u05D1\u05E9\u05EA \u05D0\u05DE\u05E8\u05D9\u05E7\u05D4 (Americas)" },
-    { value: "Asia", label: "\u05D0\u05E1\u05D9\u05D4 (Asia)" },
-    { value: "Africa", label: "\u05D0\u05E4\u05E8\u05D9\u05E7\u05D4 (Africa)" },
-    { value: "Oceania", label: "\u05D0\u05D5\u05E7\u05D9\u05D0\u05E0\u05D9\u05D4 (Oceania)" },
-    { value: "Europe/Asia", label: "\u05D0\u05D9\u05E8\u05D5\u05E4\u05D4/\u05D0\u05E1\u05D9\u05D4 (Europe/Asia)" }
-  ];
-  function buildFlagOptions(countries) {
-    const map = /* @__PURE__ */ new Map();
-    WORLD_COUNTRIES_HE.forEach((c) => map.set(c.flag, c.name_he));
-    countries.forEach((c) => {
-      if (c.flag) map.set(c.flag, c.name_he);
-    });
-    return Array.from(map.entries()).map(([flag, name]) => ({ flag, name }));
-  }
-  function CrudModal({ onClose, countries, onSaved }) {
-    const [step, setStep] = useState(1);
-    const [mode, setMode] = useState("new");
-    const [country, setCountry] = useState({ name_en: "", name_he: "", flag: "", region: "", Distance: "" });
-    const [existingId, setExistingId] = useState(null);
-    const [year, setYear] = useState((/* @__PURE__ */ new Date()).getFullYear());
-    const [metric, setMetric] = useState({
-      hdi: "",
-      outbound_tourism_millions: "",
-      air_transport_quality: "",
-      has_direct_flights: false,
-      jewish_population: "",
-      online_search_index: "",
-      travel_advisory: 1,
-      entries_to_israel_thousands: "",
-      has_office: false,
-      gdp_per_capita: "",
-      average_expenditure_per_trip: "",
-      number_of_passengers_per_year: "",
-      evangelical_population: ""
-    });
-    const [missingWarning, setMissingWarning] = useState([]);
-    const [saving, setSaving] = useState(false);
-    const [aiFilling, setAiFilling] = useState(false);
-    const flagOptions = useMemo(() => buildFlagOptions(countries), [countries]);
-    const [basicsAiLoading, setBasicsAiLoading] = useState(false);
-    const [basicsAutoFilled, setBasicsAutoFilled] = useState(false);
-    const selectExisting = (id) => {
-      const c = countries.find((x) => x.id === Number(id));
-      if (c) {
-        setExistingId(c.id);
-        setCountry(c);
-      }
-    };
-    const handleNameEnBlur = () => {
-      const fixed = toTitleCase(country.name_en);
-      if (fixed === country.name_en && basicsAutoFilled) return;
-      const match = lookupCanonicalCountry(fixed, country.name_he);
-      if (match) {
-        setCountry((c) => __spreadProps(__spreadValues({}, c), { name_en: fixed, name_he: c.name_he || match.name_he, flag: c.flag || match.flag, Distance: c.Distance !== "" ? c.Distance : match.distance_km }));
-        setBasicsAutoFilled(true);
-      } else {
-        setCountry((c) => __spreadProps(__spreadValues({}, c), { name_en: fixed }));
-        setBasicsAutoFilled(false);
-      }
-    };
-    const aiCompleteBasics = async () => {
-      if (!country.name_en.trim()) return;
-      setBasicsAiLoading(true);
-      try {
-        const res = await DataAPI.generateInsight("country_basics", { name_en: country.name_en });
-        const parsed = JSON.parse(res.text);
-        setCountry((c) => {
-          var _a;
-          return __spreadProps(__spreadValues({}, c), {
-            name_he: c.name_he || parsed.name_he || "",
-            flag: c.flag || parsed.flag || "",
-            Distance: c.Distance !== "" ? c.Distance : (_a = parsed.distance_km) != null ? _a : ""
-          });
-        });
-      } catch (err) {
-        alert("\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E9\u05DC\u05DE\u05EA AI: " + err.message);
-      }
-      setBasicsAiLoading(false);
-    };
-    const goPart2 = () => {
-      if (mode === "new" && (!country.name_en || !country.name_he)) return;
-      setStep(2);
-    };
-    const checkMissing = () => {
-      const required = ["hdi", "outbound_tourism_millions", "air_transport_quality", "jewish_population", "online_search_index", "entries_to_israel_thousands"];
-      return required.filter((k) => metric[k] === "" || metric[k] === null);
-    };
-    const tryFinish = () => {
-      const missing = checkMissing();
-      setMissingWarning(missing);
-      if (missing.length === 0) doSave(metric);
-    };
-    const fillFromAI = async () => {
-      setAiFilling(true);
-      try {
-        const result = await DataAPI.estimateViaAI(country.name_en, country.name_he, [year]);
-        const row = result.rows.find((r) => r.year === year) || result.rows[0];
-        setMetric((m) => __spreadProps(__spreadValues({}, m), {
-          hdi: m.hdi !== "" ? m.hdi : row.hdi,
-          outbound_tourism_millions: m.outbound_tourism_millions !== "" ? m.outbound_tourism_millions : row.outbound_tourism_millions,
-          air_transport_quality: m.air_transport_quality !== "" ? m.air_transport_quality : row.air_transport_quality,
-          has_direct_flights: m.has_direct_flights || row.has_direct_flights,
-          jewish_population: m.jewish_population !== "" ? m.jewish_population : row.jewish_population,
-          online_search_index: m.online_search_index !== "" ? m.online_search_index : row.online_search_index,
-          travel_advisory: m.travel_advisory || row.travel_advisory,
-          entries_to_israel_thousands: m.entries_to_israel_thousands !== "" ? m.entries_to_israel_thousands : row.entries_to_israel_thousands,
-          _aiFilled: true
-        }));
-        setMissingWarning([]);
-      } catch (err) {
-        alert("\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E9\u05DC\u05DE\u05EA AI: " + err.message);
-      }
-      setAiFilling(false);
-    };
-    const doSave = async (finalMetric) => {
-      setSaving(true);
-      try {
-        let countryId = existingId;
-        if (mode === "new" || country.flag || country.region || country.Distance !== "") {
-          const saved = await DataAPI.upsertCountry({
-            name_en: country.name_en,
-            name_he: country.name_he,
-            flag: country.flag,
-            region: country.region,
-            Distance: country.Distance === "" ? null : Number(country.Distance)
-          });
-          countryId = saved.id;
-        }
-        await DataAPI.upsertMetric({
-          country_id: countryId,
-          year,
-          hdi: finalMetric.hdi === "" ? null : Number(finalMetric.hdi),
-          outbound_tourism_millions: finalMetric.outbound_tourism_millions === "" ? null : Number(finalMetric.outbound_tourism_millions),
-          air_transport_quality: finalMetric.air_transport_quality === "" ? null : Number(finalMetric.air_transport_quality),
-          has_direct_flights: !!finalMetric.has_direct_flights,
-          jewish_population: finalMetric.jewish_population === "" ? null : Math.round(Number(finalMetric.jewish_population)),
-          online_search_index: finalMetric.online_search_index === "" ? null : Math.round(Number(finalMetric.online_search_index)),
-          travel_advisory: Number(finalMetric.travel_advisory) || 1,
-          entries_to_israel_thousands: finalMetric.entries_to_israel_thousands === "" ? null : Number(finalMetric.entries_to_israel_thousands),
-          has_office: !!finalMetric.has_office,
-          gdp_per_capita: finalMetric.gdp_per_capita === "" ? null : Number(finalMetric.gdp_per_capita),
-          average_expenditure_per_trip: finalMetric.average_expenditure_per_trip === "" ? null : Number(finalMetric.average_expenditure_per_trip),
-          number_of_passengers_per_year: finalMetric.number_of_passengers_per_year === "" ? null : Number(finalMetric.number_of_passengers_per_year),
-          evangelical_population: finalMetric.evangelical_population === "" ? null : Math.round(Number(finalMetric.evangelical_population)),
-          is_ai_estimated: !!finalMetric._aiFilled,
-          source: finalMetric._aiFilled ? "gemini_ai_estimate" : "manual_edit"
-        });
-        onSaved();
-        onClose();
-      } catch (err) {
-        alert("\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DE\u05D9\u05E8\u05D4: " + err.message);
-      }
-      setSaving(false);
-    };
-    const field = (key, label, opts = {}) => {
-      var _a;
-      return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, label), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "number",
-          value: metric[key],
-          min: opts.min,
-          max: opts.max,
-          step: (_a = opts.step) != null ? _a : "any",
-          onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { [key]: e.target.value, _aiFilled: false })),
-          className: `input-field w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${missingWarning.includes(key) ? "ring-2 ring-amber-400" : ""}`
-        }
-      ), opts.hint && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-0.5" }, opts.hint));
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[60] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "\u{1F4E5} \u05E0\u05D9\u05D4\u05D5\u05DC \u05D3\u05D0\u05D8\u05D4-\u05D1\u05D9\u05D9\u05E1 \u2014 \u05D7\u05DC\u05E7 ", step, " \u05DE\u05EA\u05D5\u05DA 2"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-6 space-y-5" }, step === 1 && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "\u05D7\u05DC\u05E7 1 \u05DE\u05EA\u05D5\u05DA 2: \u05D4\u05E7\u05DE\u05EA/\u05D1\u05D7\u05D9\u05E8\u05EA \u05DE\u05D3\u05D9\u05E0\u05D4 \u2014 \u05E4\u05E8\u05D8\u05D9\u05DD \u05E7\u05D1\u05D5\u05E2\u05D9\u05DD \u05E9\u05D0\u05D9\u05E0\u05DD \u05EA\u05DC\u05D5\u05D9\u05D9 \u05E9\u05E0\u05D4."), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setMode("new"), className: `px-4 py-2 rounded-xl text-sm font-medium ${mode === "new" ? "bg-blue-600 text-white" : "text-secondary border"}` }, "\u2795 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D7\u05D3\u05E9\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: () => setMode("existing"), className: `px-4 py-2 rounded-xl text-sm font-medium ${mode === "existing" ? "bg-blue-600 text-white" : "text-secondary border"}` }, "\u270F\uFE0F \u05DE\u05D3\u05D9\u05E0\u05D4 \u05E7\u05D9\u05D9\u05DE\u05EA")), mode === "existing" ? /* @__PURE__ */ React.createElement("select", { onChange: (e) => selectExisting(e.target.value), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u05D1\u05D7\u05E8 \u05DE\u05D3\u05D9\u05E0\u05D4..."), countries.map((c) => /* @__PURE__ */ React.createElement("option", { key: c.id, value: c.id }, c.flag, " ", c.name_he))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "\u05E9\u05DD \u05D1\u05D0\u05E0\u05D2\u05DC\u05D9\u05EA"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        placeholder: "Greece / FRANCE / france...",
-        value: country.name_en,
-        onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { name_en: e.target.value })),
-        onBlur: handleNameEnBlur,
-        className: "input-field w-full border rounded-lg px-3 py-2 text-sm"
-      }
-    ), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-0.5" }, "\u05D4\u05E4\u05D5\u05E8\u05DE\u05D8 \u05DE\u05EA\u05D5\u05E7\u05DF \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA (\u05D0\u05D5\u05EA \u05E8\u05D0\u05E9\u05D5\u05E0\u05D4 \u05D2\u05D3\u05D5\u05DC\u05D4) \u05DB\u05E9\u05E2\u05D5\u05D1\u05E8\u05D9\u05DD \u05DC\u05E9\u05D3\u05D4 \u05D4\u05D1\u05D0")), country.name_en.trim() && /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "\u05E9\u05DD \u05D1\u05E2\u05D1\u05E8\u05D9\u05EA ", basicsAutoFilled && /* @__PURE__ */ React.createElement("span", { className: "text-emerald-500" }, "\u2713 \u05DE\u05D5\u05DC\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA")), /* @__PURE__ */ React.createElement("input", { placeholder: "\u05D9\u05D5\u05D5\u05DF", value: country.name_he, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { name_he: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "\u05D3\u05D2\u05DC"), /* @__PURE__ */ React.createElement("select", { value: country.flag, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { flag: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u05D1\u05D7\u05E8 \u05D3\u05D2\u05DC..."), flagOptions.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.flag, value: f.flag }, f.flag, " ", f.name))))), country.name_en.trim() && !country.name_he && /* @__PURE__ */ React.createElement("button", { onClick: aiCompleteBasics, disabled: basicsAiLoading, className: "text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium" }, basicsAiLoading ? "\u{1F504} \u05DE\u05E9\u05DC\u05D9\u05DD..." : "\u{1F916} \u05D4\u05E9\u05DC\u05DD \u05E9\u05DD \u05D1\u05E2\u05D1\u05E8\u05D9\u05EA, \u05D3\u05D2\u05DC \u05D5\u05DE\u05E8\u05D7\u05E7 \u05E2\u05DD AI")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "\u05D0\u05D6\u05D5\u05E8 / \u05D9\u05D1\u05E9\u05EA"), /* @__PURE__ */ React.createElement("select", { value: country.region, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { region: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\u05D1\u05D7\u05E8 \u05D0\u05D6\u05D5\u05E8..."), REGION_OPTIONS.map((r) => /* @__PURE__ */ React.createElement("option", { key: r.value, value: r.value }, r.label)))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, '\u05DE\u05E8\u05D7\u05E7 \u05DE\u05D9\u05E9\u05E8\u05D0\u05DC (\u05E7"\u05DE) ', basicsAutoFilled && country.Distance !== "" && /* @__PURE__ */ React.createElement("span", { className: "text-emerald-500" }, "\u2713 \u05D7\u05D5\u05E9\u05D1 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA")), /* @__PURE__ */ React.createElement("input", { type: "number", min: "0", step: "1", value: country.Distance, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { Distance: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-end" }, /* @__PURE__ */ React.createElement("button", { onClick: goPart2, className: "bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium" }, "\u05D4\u05DE\u05E9\u05DA \u05DC\u05D7\u05DC\u05E7 2 \u2190"))), step === 2 && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "\u05D7\u05DC\u05E7 2 \u05DE\u05EA\u05D5\u05DA 2: \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E9\u05E0\u05EA\u05D9\u05D9\u05DD \u2014 \u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05DE\u05E9\u05EA\u05E0\u05D9\u05DD \u05DE\u05E9\u05E0\u05D4 \u05DC\u05E9\u05E0\u05D4."), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "\u05E9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("input", { type: "number", min: "2000", max: "2100", step: "1", value: year, onChange: (e) => setYear(Number(e.target.value)), className: "input-field border rounded-lg px-3 py-2 text-sm w-32" })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3" }, field("hdi", "HDI", { min: 0, max: 1, step: 1e-3, hint: "\u05E2\u05E8\u05DA \u05D1\u05D9\u05DF 0.000 \u05DC-1.000" }), field("outbound_tourism_millions", "\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA (\u05DE\u05D9\u05DC\u05D9\u05D5\u05DF)", { min: 0, step: 0.1, hint: "\u05DE\u05E1\u05E4\u05E8 \u05E2\u05E9\u05E8\u05D5\u05E0\u05D9, \u05DE\u05D9\u05DC\u05D9\u05D5\u05E0\u05D9 \u05E0\u05D5\u05E1\u05E2\u05D9\u05DD" }), field("air_transport_quality", "\u05D0\u05D9\u05DB\u05D5\u05EA \u05EA\u05E2\u05D5\u05E4\u05D4 (TTDI)", { min: 0, max: 10, step: 0.1, hint: "\u05E2\u05E8\u05DA \u05D1\u05D9\u05DF 0 \u05DC-10" }), field("jewish_population", "\u05D0\u05D5\u05DB\u05DC\u05D5\u05E1\u05D9\u05D9\u05D4 \u05D9\u05D4\u05D5\u05D3\u05D9\u05EA (\u05D0\u05DC\u05E4\u05D9\u05DD)", { min: 0, step: 0.1, hint: "\u05DE\u05E1\u05E4\u05E8 \u05E2\u05E9\u05E8\u05D5\u05E0\u05D9, \u05D1\u05D0\u05DC\u05E4\u05D9 \u05D0\u05E0\u05E9\u05D9\u05DD" }), field("online_search_index", "\u05DE\u05D3\u05D3 \u05D7\u05D9\u05E4\u05D5\u05E9 \u05DE\u05E7\u05D5\u05D5\u05DF", { min: 0, max: 100, step: 1, hint: "\u05E2\u05E8\u05DA \u05D1\u05D9\u05DF 0 \u05DC-100" }), field("entries_to_israel_thousands", "\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC (\u05D0\u05DC\u05E4\u05D9\u05DD)", { min: 0, step: 0.1, hint: "\u05DE\u05E1\u05E4\u05E8 \u05E2\u05E9\u05E8\u05D5\u05E0\u05D9, \u05D1\u05D0\u05DC\u05E4\u05D9 \u05D0\u05E0\u05E9\u05D9\u05DD" }), field("gdp_per_capita", "\u05EA\u05D5\u05E6\u05E8 \u05DC\u05E0\u05E4\u05E9 ($)", { min: 0, step: 1, hint: "\u05D3\u05D5\u05DC\u05E8\u05D9\u05DD \u05DC\u05E0\u05E4\u05E9" }), field("average_expenditure_per_trip", "\u05D4\u05D5\u05E6\u05D0\u05D4 \u05DE\u05DE\u05D5\u05E6\u05E2\u05EA \u05DC\u05E0\u05E1\u05D9\u05E2\u05D4 ($)", { min: 0, step: 1, hint: "\u05D3\u05D5\u05DC\u05E8\u05D9\u05DD \u05DC\u05E0\u05E1\u05D9\u05E2\u05D4" }), field("number_of_passengers_per_year", "\u05E0\u05D5\u05E1\u05E2\u05D9\u05DD \u05D1\u05D8\u05D9\u05E1\u05D5\u05EA (\u05E9\u05E0\u05EA\u05D9)", { min: 0, step: 1, hint: "\u05DE\u05E1\u05E4\u05E8 \u05E9\u05DC\u05DD" }), field("evangelical_population", "\u05D0\u05D5\u05DB\u05DC\u05D5\u05E1\u05D9\u05D9\u05D4 \u05D0\u05D5\u05D5\u05E0\u05D2\u05DC\u05D9\u05E1\u05D8\u05D9\u05EA", { min: 0, step: 1, hint: "\u05DE\u05E1\u05E4\u05E8 \u05E9\u05DC\u05DD, \u05D0\u05E0\u05E9\u05D9\u05DD" })), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-4 items-center" }, /* @__PURE__ */ React.createElement("label", { className: "flex items-center gap-2 text-sm text-secondary" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: !!metric.has_direct_flights, onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { has_direct_flights: e.target.checked })) }), " \u2708\uFE0F \u05D8\u05D9\u05E1\u05D5\u05EA \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("label", { className: "flex items-center gap-2 text-sm text-secondary" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: !!metric.has_office, onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { has_office: e.target.checked })) }), " \u2B50 \u05DC\u05E9\u05DB\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4 \u05D1\u05E9\u05E0\u05D4 \u05D6\u05D5"), /* @__PURE__ */ React.createElement("label", { className: "text-sm text-secondary flex items-center gap-2" }, "\u05D0\u05D6\u05D4\u05E8\u05EA \u05DE\u05E1\u05E2:", /* @__PURE__ */ React.createElement("select", { value: metric.travel_advisory, onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { travel_advisory: e.target.value })), className: "input-field border rounded px-2 py-1 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: 1 }, "1 \xB7 \u05EA\u05E7\u05D9\u05DF"), /* @__PURE__ */ React.createElement("option", { value: 2 }, "2 \xB7 \u05D0\u05D6\u05D4\u05E8\u05D4")))), missingWarning.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "rounded-lg px-3 py-2 text-sm border", style: { background: hexA("#f59e0b", 0.1), borderColor: hexA("#f59e0b", 0.3), color: "#b45309" } }, "\u26A0\uFE0F \u05D9\u05E9 ", missingWarning.length, " \u05E9\u05D3\u05D5\u05EA \u05D7\u05D5\u05D1\u05D4 \u05E8\u05D9\u05E7\u05D9\u05DD. \u05D0\u05E4\u05E9\u05E8 \u05DC\u05DE\u05DC\u05D0 \u05D9\u05D3\u05E0\u05D9\u05EA, \u05DC\u05D4\u05E9\u05DC\u05D9\u05DD \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05E2\u05DD AI, \u05D0\u05D5 \u05DC\u05D4\u05E9\u05D0\u05D9\u05E8 \u05E8\u05D9\u05E7 \u05D5\u05DC\u05D4\u05DE\u05E9\u05D9\u05DA.", /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: fillFromAI, disabled: aiFilling, className: "bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium" }, aiFilling ? "\u{1F504} \u05DE\u05E9\u05DC\u05D9\u05DD..." : "\u2728 \u05D4\u05E9\u05DC\u05DD \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05D4\u05E8\u05E9\u05EA (AI)"), /* @__PURE__ */ React.createElement("button", { onClick: () => doSave(metric), className: "border border-amber-400 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-medium" }, "\u05D4\u05E9\u05D0\u05E8 \u05E8\u05D9\u05E7 \u05D5\u05D4\u05DE\u05E9\u05DA"))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setStep(1), className: "text-secondary text-sm" }, "\u2192 \u05D7\u05D6\u05E8\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: tryFinish, disabled: saving, className: "bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium" }, saving ? "\u05E9\u05D5\u05DE\u05E8..." : "\u2705 \u05E9\u05DE\u05D5\u05E8 \u05DC\u05DE\u05D0\u05D2\u05E8"))))));
-  }
-  function DataManagementPanel({ countries, allMetrics, onRefresh, onAddNew }) {
-    const [filter, setFilter] = useState("");
-    const rows = allMetrics.map((m) => __spreadProps(__spreadValues({}, m), { country: countries.find((c) => c.id === m.country_id) })).filter((r) => r.country).filter((r) => !filter || r.country.name_he.includes(filter)).sort((a, b) => a.country.name_he.localeCompare(b.country.name_he) || a.year - b.year);
-    const deleteRow = async (row) => {
-      if (!confirm(`\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E9\u05DC ${row.country.name_he} \u05DC\u05E9\u05E0\u05EA ${row.year}?`)) return;
-      await DataAPI.deleteMetric(row.country_id, row.year);
-      onRefresh();
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("input", { value: filter, onChange: (e) => setFilter(e.target.value), placeholder: "\u{1F50E} \u05E1\u05D9\u05E0\u05D5\u05DF \u05DC\u05E4\u05D9 \u05DE\u05D3\u05D9\u05E0\u05D4...", className: "input-field border rounded-lg px-3 py-2 text-sm w-64" }), /* @__PURE__ */ React.createElement("button", { onClick: onAddNew, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium" }, "\u2795 \u05D4\u05D5\u05E1\u05E4\u05EA \u05DE\u05D3\u05D9\u05E0\u05D4/\u05E9\u05E0\u05D4")), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider max-h-96 overflow-y-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-sm" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05DE\u05D3\u05D9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05E9\u05E0\u05D4"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA (\u05D0\u05DC\u05E4\u05D9\u05DD)"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "\u05DE\u05E7\u05D5\u05E8"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }))), /* @__PURE__ */ React.createElement("tbody", null, rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: `${r.country_id}-${r.year}`, className: "border-t divider" }, /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-primary" }, r.country.flag, " ", r.country.name_he, " ", r.has_office && "\u2B50"), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-secondary" }, r.year), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-secondary" }, r.entries_to_israel_thousands), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-xs" }, r.is_ai_estimated ? "\u2728 AI" : r.source), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5" }, /* @__PURE__ */ React.createElement("button", { onClick: () => deleteRow(r), className: "text-red-500 hover:text-red-700 text-xs" }, "\u{1F5D1}\uFE0F \u05DE\u05D7\u05E7"))))))));
-  }
-  function SettingsSidebar({ open, onClose, mode, setMode, currentPassword, onChangePassword, countries, allMetrics, onRefresh }) {
-    const [showPwModal, setShowPwModal] = useState(false);
-    const [showManageModal, setShowManageModal] = useState(false);
-    const [showMethodModal, setShowMethodModal] = useState(false);
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-40 transition-opacity", style: { background: "var(--overlay-bg)", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none" }, onClick: onClose }), /* @__PURE__ */ React.createElement("div", { className: "fixed top-0 left-0 h-full w-full max-w-sm z-50 shadow-2xl transition-transform duration-300 overflow-y-auto card", style: { transform: open ? "translateX(0)" : "translateX(-100%)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between sticky top-0 card z-10" }, /* @__PURE__ */ React.createElement("h2", { className: "font-bold text-lg text-primary" }, "\u2699\uFE0F \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-8" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F313} \u05DE\u05E6\u05D1 \u05EA\u05E6\u05D5\u05D2\u05D4"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-3 gap-2" }, [["light", "\u2600\uFE0F \u05D1\u05D4\u05D9\u05E8"], ["dark", "\u{1F319} \u05DB\u05D4\u05D4"], ["system", "\u{1F5A5}\uFE0F \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"]].map(([key, label]) => /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        key,
-        onClick: () => setMode(key),
-        className: "flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition",
-        style: mode === key ? { borderColor: "#2563eb", background: hexA("#2563eb", 0.12), color: "#2563eb" } : { borderColor: "var(--card-border)", color: "var(--text-secondary)" }
-      },
-      /* @__PURE__ */ React.createElement("span", { className: "text-xs font-medium" }, label)
-    ))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2" }, '\u{1F4A1} "\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9" \u05E2\u05D5\u05D1\u05E8 \u05DC\u05DB\u05D4\u05D4 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05D1\u05D9\u05DF 19:00 \u05DC-06:00 \u05DC\u05E4\u05D9 \u05E9\u05E2\u05D5\u05DF \u05D4\u05DE\u05DB\u05E9\u05D9\u05E8 \u05E9\u05DC\u05DA.')), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F511} \u05E1\u05D9\u05E1\u05DE\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowPwModal(true), className: "w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" }, "\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D9\u05E1\u05DE\u05D4")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F5C4}\uFE0F \u05D1\u05E1\u05D9\u05E1 \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowManageModal(true), className: "w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg" }, "\u05E0\u05D9\u05D4\u05D5\u05DC \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD (\u05D4\u05D5\u05E1\u05E4\u05D4 / \u05E2\u05E8\u05D9\u05DB\u05D4 / \u05DE\u05D7\u05D9\u05E7\u05D4)")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "\u{1F9EE} \u05DE\u05EA\u05D5\u05D3\u05D5\u05DC\u05D5\u05D2\u05D9\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowMethodModal(true), className: "w-full px-4 py-2.5 rounded-lg text-sm font-medium border", style: { borderColor: "var(--card-border)", color: "var(--text-primary)" } }, "\u05D0\u05D9\u05DA \u05DE\u05D7\u05D5\u05E9\u05D1\u05EA \u05D4\u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u05D4\u05DC\u05D9\u05E0\u05D9\u05D0\u05E8\u05D9\u05EA?")))), showPwModal && /* @__PURE__ */ React.createElement(ChangePasswordModal, { onClose: () => setShowPwModal(false), onChangePassword }), showManageModal && /* @__PURE__ */ React.createElement(DataManagementModal, { onClose: () => setShowManageModal(false), countries, allMetrics, onRefresh }), showMethodModal && /* @__PURE__ */ React.createElement(RegressionMethodologyModal, { onClose: () => setShowMethodModal(false) }));
-  }
-  function RegressionMethodologyModal({ onClose }) {
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[75] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between sticky top-0 card z-10" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "\u{1F9EE} \u05D0\u05D9\u05DA \u05DE\u05D7\u05D5\u05E9\u05D1\u05EA \u05D4\u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u05D4\u05DC\u05D9\u05E0\u05D9\u05D0\u05E8\u05D9\u05EA \u2014 \u05D4\u05E1\u05D1\u05E8 \u05DE\u05DC\u05D0"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-6 space-y-5 text-sm text-primary leading-relaxed" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "1\uFE0F\u20E3 \u05E1\u05D5\u05D2 \u05D4\u05DE\u05D5\u05D3\u05DC"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, '\u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u05DC\u05D9\u05E0\u05D9\u05D0\u05E8\u05D9\u05EA \u05DE\u05E8\u05D5\u05D1\u05D4 \u05E7\u05DC\u05D0\u05E1\u05D9\u05EA \u05D1\u05E9\u05D9\u05D8\u05EA "\u05E8\u05D9\u05D1\u05D5\u05E2\u05D9\u05DD \u05E4\u05D7\u05D5\u05EA\u05D9\u05DD" (OLS \u2014 Ordinary Least Squares). \u05D4\u05DE\u05D5\u05D3\u05DC \u05DE\u05E0\u05E1\u05D4 \u05DC\u05D4\u05E1\u05D1\u05D9\u05E8 \u05D0\u05EA \u05DE\u05E1\u05E4\u05E8 \u05D4\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC \u05DE\u05DE\u05D3\u05D9\u05E0\u05D4 \u05DE\u05E1\u05D5\u05D9\u05DE\u05EA \u05D1\u05E9\u05E0\u05D4 \u05DE\u05E1\u05D5\u05D9\u05DE\u05EA, \u05DB\u05E4\u05D5\u05E0\u05E7\u05E6\u05D9\u05D4 \u05DC\u05D9\u05E0\u05D9\u05D0\u05E8\u05D9\u05EA \u05E9\u05DC ', /* @__PURE__ */ React.createElement("b", null, "\u05DB\u05DC"), " \u05D4\u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD \u05D4\u05D6\u05DE\u05D9\u05E0\u05D9\u05DD \u05D1\u05D8\u05D1\u05DC\u05EA \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD: \u05DE\u05D3\u05D3 \u05E4\u05D9\u05EA\u05D5\u05D7 \u05D0\u05E0\u05D5\u05E9\u05D9 (HDI), \u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA, \u05DE\u05D3\u05D3 \u05D7\u05D9\u05E4\u05D5\u05E9 \u05DE\u05E7\u05D5\u05D5\u05DF, \u05D0\u05D9\u05DB\u05D5\u05EA \u05EA\u05E9\u05EA\u05D9\u05D5\u05EA \u05EA\u05E2\u05D5\u05E4\u05D4, \u05D0\u05D5\u05DB\u05DC\u05D5\u05E1\u05D9\u05D9\u05D4 \u05D9\u05D4\u05D5\u05D3\u05D9\u05EA, \u05E7\u05D9\u05D5\u05DD \u05D8\u05D9\u05E1\u05D5\u05EA \u05D9\u05E9\u05D9\u05E8\u05D5\u05EA, \u05D5\u05D4\u05E2\u05D3\u05E8 \u05D0\u05D6\u05D4\u05E8\u05EA \u05DE\u05E1\u05E2.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "2\uFE0F\u20E3 \u05EA\u05E7\u05E0\u05D5\u05DF \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD (Standardization)"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "\u05DC\u05E4\u05E0\u05D9 \u05D4\u05D7\u05D9\u05E9\u05D5\u05D1, \u05DB\u05DC \u05DE\u05E9\u05EA\u05E0\u05D4 (\u05DB\u05D5\u05DC\u05DC \u05D4\u05DE\u05E9\u05EA\u05E0\u05D4 \u05D4\u05DE\u05D5\u05E1\u05D1\u05E8) \u05DE\u05EA\u05D5\u05E7\u05E0\u05DF \u05DC\u05E6\u05D9\u05D5\u05DF \u05EA\u05E7\u05DF (z-score): \u05DE\u05D7\u05E1\u05D9\u05E8\u05D9\u05DD \u05D0\u05EA \u05D4\u05DE\u05DE\u05D5\u05E6\u05E2 \u05D5\u05DE\u05D7\u05DC\u05E7\u05D9\u05DD \u05D1\u05E1\u05D8\u05D9\u05D9\u05EA \u05D4\u05EA\u05E7\u05DF. \u05DB\u05DA \u05DC\u05DB\u05DC \u05DE\u05E9\u05EA\u05E0\u05D4 \u05D9\u05E9 \u05DE\u05DE\u05D5\u05E6\u05E2 0 \u05D5\u05E1\u05D8\u05D9\u05D9\u05EA \u05EA\u05E7\u05DF 1, \u05DC\u05DC\u05D0 \u05E7\u05E9\u05E8 \u05DC\u05D9\u05D7\u05D9\u05D3\u05D5\u05EA \u05D4\u05DE\u05E7\u05D5\u05E8\u05D9\u05D5\u05EA \u05E9\u05DC\u05D5. \u05D6\u05D4 \u05D4\u05DB\u05E8\u05D7\u05D9 \u05DB\u05D3\u05D9 \u05E9\u05D0\u05E4\u05E9\u05E8 \u05D9\u05D4\u05D9\u05D4 \u05DC\u05D4\u05E9\u05D5\u05D5\u05EA \u05D1\u05D9\u05DF \u05D4\u05DE\u05E7\u05D3\u05DE\u05D9\u05DD \u05D1\u05D4\u05DE\u05E9\u05DA.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "3\uFE0F\u20E3 \u05E4\u05EA\u05E8\u05D5\u05DF \u05D4\u05DE\u05D5\u05D3\u05DC"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "\u05D4\u05DE\u05D5\u05D3\u05DC \u05E0\u05E4\u05EA\u05E8 \u05D1\u05D0\u05DE\u05E6\u05E2\u05D5\u05EA \u05DE\u05E9\u05D5\u05D5\u05D0\u05D5\u05EA \u05E0\u05D5\u05E8\u05DE\u05DC\u05D9\u05D5\u05EA: X\u1D40X\xB7\u03B2 = X\u1D40y (\u05DB\u05D0\u05E9\u05E8 X \u05D4\u05D9\u05D0 \u05DE\u05D8\u05E8\u05D9\u05E6\u05EA \u05D4\u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD \u05D4\u05DE\u05EA\u05D5\u05E7\u05E0\u05E0\u05D9\u05DD \u05D5\u05E2\u05DE\u05D5\u05D3\u05EA \u05D7\u05D9\u05EA\u05D5\u05DA, \u05D5-y \u05D4\u05D5\u05D0 \u05D4\u05DE\u05E9\u05EA\u05E0\u05D4 \u05D4\u05DE\u05D5\u05E1\u05D1\u05E8 \u05D4\u05DE\u05EA\u05D5\u05E7\u05E0\u05DF). \u05D4\u05DE\u05E9\u05D5\u05D5\u05D0\u05D5\u05EA \u05E0\u05E4\u05EA\u05E8\u05D5\u05EA \u05D1\u05D0\u05DE\u05E6\u05E2\u05D5\u05EA \u05D0\u05DC\u05D9\u05DE\u05D9\u05E0\u05E6\u05D9\u05D9\u05EA \u05D2\u05D0\u05D5\u05E1-\u05D2'\u05D5\u05E8\u05D3\u05DF \u2014 \u05E9\u05D9\u05D8\u05D4 \u05D0\u05DC\u05D2\u05D1\u05E8\u05D9\u05EA \u05E1\u05D8\u05E0\u05D3\u05E8\u05D8\u05D9\u05EA \u05D5\u05DE\u05D3\u05D5\u05D9\u05E7\u05EA, \u05DC\u05D0 \u05E7\u05D9\u05E8\u05D5\u05D1.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "4\uFE0F\u20E3 R\xB2 \u2014 \u05DE\u05D9\u05D3\u05EA \u05D4\u05D4\u05EA\u05D0\u05DE\u05D4"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, 'R\xB2 \u05DE\u05D5\u05D3\u05D3 \u05D0\u05D9\u05D6\u05D4 \u05D0\u05D7\u05D5\u05D6 \u05DE\u05D4\u05E9\u05D5\u05E0\u05D5\u05EA \u05D1\u05DB\u05E0\u05D9\u05E1\u05D5\u05EA \u05D4\u05EA\u05D9\u05D9\u05E8\u05D9\u05DD "\u05DE\u05D5\u05E1\u05D1\u05E8" \u05E2\u05DC \u05D9\u05D3\u05D9 \u05DB\u05DC \u05D4\u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD \u05D1\u05DE\u05D5\u05D3\u05DC, \u05D1\u05E1\u05D5\u05DC\u05DD 0 \u05E2\u05D3 1. \u05DB\u05DB\u05DC \u05E9\u05D2\u05D1\u05D5\u05D4 \u05D9\u05D5\u05EA\u05E8 \u2014 \u05D4\u05DE\u05D5\u05D3\u05DC \u05DE\u05E1\u05D1\u05D9\u05E8 \u05D9\u05D5\u05EA\u05E8. \u05DB\u05DB\u05DC\u05DC \u05D0\u05E6\u05D1\u05E2 \u05D2\u05E1: \u05DE\u05E2\u05DC 0.7 = \u05D4\u05E1\u05D1\u05E8 \u05D7\u05D6\u05E7, 0.4-0.7 = \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9, \u05DE\u05EA\u05D7\u05EA \u05DC-0.4 = \u05D7\u05DC\u05E9 (\u05D9\u05E9 \u05DB\u05E0\u05E8\u05D0\u05D4 \u05D2\u05D5\u05E8\u05DE\u05D9\u05DD \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05D9\u05DD \u05E0\u05D5\u05E1\u05E4\u05D9\u05DD \u05DE\u05D7\u05D5\u05E5 \u05DC\u05DE\u05D5\u05D3\u05DC). ', /* @__PURE__ */ React.createElement("b", null, "\u05D7\u05E9\u05D5\u05D1:"), " R\xB2 \u05D2\u05D1\u05D5\u05D4 \u05DE\u05E8\u05D0\u05D4 \u05E7\u05D5\u05E8\u05DC\u05E6\u05D9\u05D4 \u05D7\u05D6\u05E7\u05D4, \u05D0\u05DA \u05D0\u05D9\u05E0\u05D5 \u05DE\u05D5\u05DB\u05D9\u05D7 \u05E7\u05E9\u05E8 \u05E1\u05D9\u05D1\u05EA\u05D9.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, '5\uFE0F\u20E3 "\u05D0\u05D7\u05D5\u05D6 \u05D4\u05D4\u05E9\u05E4\u05E2\u05D4" \u05E9\u05DC \u05DB\u05DC \u05E4\u05E8\u05DE\u05D8\u05E8 \u2014 \u05D5\u05DE\u05D4 \u05D4\u05DE\u05D2\u05D1\u05DC\u05D4 \u05E9\u05DC\u05D5'), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "\u05D4\u05D0\u05D7\u05D5\u05D6 \u05DE\u05D7\u05D5\u05E9\u05D1 \u05DB\u05DA: ", /* @__PURE__ */ React.createElement("code", null, "|\u05DE\u05E7\u05D3\u05DD \u05D4\u05E4\u05E8\u05DE\u05D8\u05E8| \xF7 \u05E1\u05DB\u05D5\u05DD \u05DB\u05DC \u05D4\u05DE\u05E7\u05D3\u05DE\u05D9\u05DD \u05D4\u05DE\u05D5\u05D7\u05DC\u05D8\u05D9\u05DD \xD7 100"), '. \u05D6\u05D5 \u05D4\u05E2\u05E8\u05DB\u05D4 \u05E4\u05E9\u05D5\u05D8\u05D4 \u05D5\u05D0\u05D9\u05E0\u05D8\u05D5\u05D0\u05D9\u05D8\u05D9\u05D1\u05D9\u05EA \u05DC"\u05D7\u05E9\u05D9\u05D1\u05D5\u05EA \u05D9\u05D7\u05E1\u05D9\u05EA", \u05D4\u05DE\u05D1\u05D5\u05E1\u05E1\u05EA \u05E2\u05DC \u05DB\u05DA \u05E9\u05DB\u05DC \u05D4\u05DE\u05E7\u05D3\u05DE\u05D9\u05DD \u05DB\u05D1\u05E8 \u05DE\u05EA\u05D5\u05E7\u05E0\u05E0\u05D9\u05DD \u05D5\u05DC\u05DB\u05DF \u05D1\u05E0\u05D9-\u05D4\u05E9\u05D5\u05D5\u05D0\u05D4. ', /* @__PURE__ */ React.createElement("b", null, "\u05D6\u05D5 \u05DC\u05D0 \u05E8\u05DE\u05EA \u05DE\u05D5\u05D1\u05D4\u05E7\u05D5\u05EA \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9\u05EA (p-value)"), " \u05D5\u05DC\u05D0 \u05E9\u05D9\u05D8\u05EA \u05D9\u05D9\u05D7\u05D5\u05E1 \u05E4\u05D5\u05E8\u05DE\u05DC\u05D9\u05EA (\u05DB\u05DE\u05D5 Shapley values). \u05D4\u05DE\u05D2\u05D1\u05DC\u05D4 \u05D4\u05DE\u05E8\u05DB\u05D6\u05D9\u05EA: \u05D0\u05DD \u05E9\u05E0\u05D9 \u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD \u05DE\u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05D1\u05D9\u05E0\u05D9\u05D4\u05DD (\u05DC\u05DE\u05E9\u05DC HDI \u05D5\u05D7\u05D9\u05E4\u05D5\u05E9 \u05DE\u05E7\u05D5\u05D5\u05DF \u05E2\u05E9\u05D5\u05D9\u05D9\u05DD \u05DC\u05E0\u05D5\u05E2 \u05D9\u05D7\u05D3 \u05D1\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DE\u05E4\u05D5\u05EA\u05D7\u05D5\u05EA), \u05D4\u05D0\u05D7\u05D5\u05D6\u05D9\u05DD \u05E2\u05DC\u05D5\u05DC\u05D9\u05DD \u05DC\u05D4\u05D9\u05D5\u05EA \u05DE\u05D5\u05D8\u05D9\u05DD. \u05D6\u05D4\u05D5 \u05DB\u05DC\u05D9 \u05D8\u05D5\u05D1 \u05DC\u05EA\u05D5\u05D1\u05E0\u05D4 \u05E8\u05D0\u05E9\u05D5\u05E0\u05D9\u05EA \u2014 \u05DC\u05D0 \u05EA\u05D7\u05DC\u05D9\u05E3 \u05DC\u05DE\u05D7\u05E7\u05E8 \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9 \u05DE\u05DC\u05D0.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "6\uFE0F\u20E3 \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD \u05D1\u05D2\u05E8\u05E3"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "\u{1F535} \u05DB\u05D7\u05D5\u05DC = \u05D4\u05E9\u05E4\u05E2\u05D4 \u05D7\u05D9\u05D5\u05D1\u05D9\u05EA (\u05DB\u05DB\u05DC \u05E9\u05D4\u05E4\u05E8\u05DE\u05D8\u05E8 \u05D2\u05D1\u05D5\u05D4 \u05D9\u05D5\u05EA\u05E8, \u05DB\u05DA \u05E6\u05E4\u05D5\u05D9\u05D9\u05DD \u05D9\u05D5\u05EA\u05E8 \u05EA\u05D9\u05D9\u05E8\u05D9\u05DD). \u{1F534} \u05D0\u05D3\u05D5\u05DD = \u05D4\u05E9\u05E4\u05E2\u05D4 \u05E9\u05DC\u05D9\u05DC\u05D9\u05EA (\u05DB\u05DB\u05DC \u05E9\u05D4\u05E4\u05E8\u05DE\u05D8\u05E8 \u05D2\u05D1\u05D5\u05D4 \u05D9\u05D5\u05EA\u05E8, \u05DB\u05DA \u05E6\u05E4\u05D5\u05D9\u05D9\u05DD \u05E4\u05D7\u05D5\u05EA \u05EA\u05D9\u05D9\u05E8\u05D9\u05DD).")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "7\uFE0F\u20E3 \u05D0\u05D9\u05DA \u05DC\u05D1\u05D3\u05D5\u05E7 \u05D1\u05E2\u05E6\u05DE\u05DB\u05DD"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, '\u05D1\u05DC\u05E9\u05D5\u05E0\u05D9\u05EA "\u05E0\u05D9\u05EA\u05D5\u05D7 \u05D3\u05D9\u05E8\u05D5\u05D2" \u2192 "\u05E0\u05D9\u05EA\u05D5\u05D7 \u05E8\u05D2\u05E8\u05E1\u05D9\u05D4" \u05D9\u05E9 \u05DB\u05E4\u05EA\u05D5\u05E8 "\u{1F50D} \u05D4\u05E6\u05D2 \u05E0\u05EA\u05D5\u05E0\u05D9 \u05D2\u05DC\u05DD \u05E9\u05E9\u05D9\u05DE\u05E9\u05D5 \u05DC\u05D7\u05D9\u05E9\u05D5\u05D1" \u05E9\u05DE\u05E6\u05D9\u05D2 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E9\u05D5\u05E8\u05D5\u05EA (\u05DE\u05D3\u05D9\u05E0\u05D4/\u05E9\u05E0\u05D4/\u05E2\u05E8\u05DB\u05D9\u05DD) \u05E9\u05E0\u05DB\u05E0\u05E1\u05D5 \u05D1\u05E4\u05D5\u05E2\u05DC \u05DC\u05D7\u05D9\u05E9\u05D5\u05D1. \u05D0\u05E4\u05E9\u05E8 \u05DC\u05D4\u05E2\u05EA\u05D9\u05E7 \u05D0\u05EA \u05D4\u05D8\u05D1\u05DC\u05D4 \u05DC\u05D0\u05E7\u05E1\u05DC \u05D5\u05DC\u05D4\u05E8\u05D9\u05E5 \u05E9\u05DD \u05E8\u05D2\u05E8\u05E1\u05D9\u05D4 \u05DE\u05E7\u05D1\u05D9\u05DC\u05D4 (Data \u2192 Data Analysis \u2192 Regression \u05D1\u05D0\u05E7\u05E1\u05DC, \u05D0\u05D5 \u05E4\u05D5\u05E0\u05E7\u05E6\u05D9\u05D9\u05EA LINEST) \u05DB\u05D3\u05D9 \u05DC\u05D5\u05D5\u05D3\u05D0 \u05E9\u05D4\u05EA\u05D5\u05E6\u05D0\u05D5\u05EA \u05E9\u05DC\u05E0\u05D5 \u05EA\u05D5\u05D0\u05DE\u05D5\u05EA.')), /* @__PURE__ */ React.createElement("section", { className: "rounded-xl p-3", style: { background: hexA("#f59e0b", 0.1), border: `1px solid ${hexA("#f59e0b", 0.3)}` } }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "\u26A0\uFE0F \u05DE\u05D2\u05D1\u05DC\u05D5\u05EA \u05E9\u05D7\u05E9\u05D5\u05D1 \u05DC\u05D4\u05DB\u05D9\u05E8"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "(1) \u05D0\u05D9\u05DF \u05D7\u05D9\u05E9\u05D5\u05D1 \u05DE\u05D5\u05D1\u05D4\u05E7\u05D5\u05EA \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9\u05EA (p-values/\u05E8\u05D5\u05D5\u05D7\u05D9 \u05E1\u05DE\u05DA) \u05DC\u05DB\u05DC \u05DE\u05E7\u05D3\u05DD. (2) \u05D0\u05D9\u05DF \u05D8\u05D9\u05E4\u05D5\u05DC \u05E4\u05D5\u05E8\u05DE\u05DC\u05D9 \u05D1\u05E7\u05D5\u05E8\u05DC\u05E6\u05D9\u05D4 \u05D1\u05D9\u05DF \u05E4\u05E8\u05DE\u05D8\u05E8\u05D9\u05DD (multicollinearity). (3) \u05D4\u05DE\u05D5\u05D3\u05DC \u05DE\u05D1\u05D5\u05E1\u05E1 \u05E2\u05DC \u05DB\u05DC \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D1\u05DE\u05D0\u05D2\u05E8 (2010-2019 \u05D1\u05DC\u05D1\u05D3 \u05E2\u05D3\u05D9\u05D9\u05DF) \u2014 \u05DB\u05DB\u05DC \u05E9\u05D9\u05EA\u05D5\u05D5\u05E1\u05E4\u05D5 \u05E9\u05E0\u05D9\u05DD \u05D5\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA, \u05D4\u05EA\u05D5\u05E6\u05D0\u05D5\u05EA \u05E2\u05E9\u05D5\u05D9\u05D5\u05EA \u05DC\u05D4\u05E9\u05EA\u05E0\u05D5\u05EA. \u05D0\u05DD \u05E6\u05E8\u05D9\u05DA \u05E8\u05DE\u05EA \u05D3\u05D9\u05D5\u05E7 \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9 \u05D2\u05D1\u05D5\u05D4\u05D4 \u05D9\u05D5\u05EA\u05E8 \u05DC\u05E6\u05D5\u05E8\u05DA \u05D4\u05D7\u05DC\u05D8\u05D5\u05EA \u05EA\u05E7\u05E6\u05D9\u05D1\u05D9\u05D5\u05EA \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05D5\u05EA, \u05DE\u05D5\u05DE\u05DC\u05E5 \u05DC\u05D4\u05D9\u05D5\u05D5\u05E2\u05E5 \u05D1\u05D0\u05E0\u05DC\u05D9\u05E1\u05D8 \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9.")))));
-  }
-  function DataManagementModal({ onClose, countries, allMetrics, onRefresh }) {
-    const [showCrud, setShowCrud] = useState(false);
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[65] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "\u{1F5C4}\uFE0F \u05E0\u05D9\u05D4\u05D5\u05DC \u05D1\u05E1\u05D9\u05E1 \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-6" }, /* @__PURE__ */ React.createElement(DataManagementPanel, { countries, allMetrics, onRefresh, onAddNew: () => setShowCrud(true) }))), showCrud && /* @__PURE__ */ React.createElement(CrudModal, { onClose: () => setShowCrud(false), countries, onSaved: onRefresh }));
-  }
-  function ChangePasswordModal({ onClose, onChangePassword }) {
-    const [newPw, setNewPw] = useState("");
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-    const save = async () => {
-      if (newPw.trim().length < 3) return;
-      setSaving(true);
-      await DataAPI.setSetting("site_password", newPw.trim());
-      onChangePassword(newPw.trim());
-      setSaving(false);
-      setSaved(true);
-      setTimeout(onClose, 1200);
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[70] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-sm border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "\u{1F511} \u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D9\u05E1\u05DE\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "\u2715")), /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-4" }, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        type: "password",
-        value: newPw,
-        autoFocus: true,
-        onChange: (e) => setNewPw(e.target.value),
-        onKeyDown: (e) => e.key === "Enter" && save(),
-        placeholder: "\u05D4\u05D6\u05DF \u05E1\u05D9\u05E1\u05DE\u05D4 \u05D7\u05D3\u05E9\u05D4",
-        className: "input-field w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-      }
-    ), saved && /* @__PURE__ */ React.createElement("p", { className: "text-emerald-500 text-sm" }, "\u2705 \u05D4\u05E1\u05D9\u05E1\u05DE\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4"), /* @__PURE__ */ React.createElement("button", { onClick: save, disabled: saving || newPw.trim().length < 3, className: "w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium py-2.5 rounded-lg text-sm" }, saving ? "\u05E9\u05D5\u05DE\u05E8..." : "\u05E9\u05DE\u05D5\u05E8 \u05E1\u05D9\u05E1\u05DE\u05D4 \u05D7\u05D3\u05E9\u05D4"))));
-  }
-  const SUB_MODULES = [
-    { key: "single", label: "\u{1F50E} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D1\u05D5\u05D3\u05D3\u05EA" },
-    { key: "compare", label: "\u2696\uFE0F \u05E0\u05D9\u05EA\u05D5\u05D7 \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA\u05D9" },
-    { key: "rank", label: "\u{1F3C6} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05D3\u05D9\u05E8\u05D5\u05D2" }
-  ];
-  function TabContent({ theme, years, countries, allMetrics }) {
-    const [sub, setSub] = useState("single");
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl border w-fit mb-6 flex-wrap", style: { background: hexA(theme.solid, 0.06), borderColor: hexA(theme.solid, 0.25) } }, SUB_MODULES.map((m) => /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        key: m.key,
-        onClick: () => setSub(m.key),
-        className: `px-4 py-2 rounded-xl text-sm font-medium transition ${sub === m.key ? `bg-gradient-to-l ${theme.grad} text-white shadow-md` : "hoverable"}`,
-        style: sub !== m.key ? { color: theme.solid } : {}
-      },
-      m.label
-    ))), sub === "single" && /* @__PURE__ */ React.createElement(SingleCountryDive, { years, theme, countries, allMetrics }), sub === "compare" && /* @__PURE__ */ React.createElement(ComparativeAnalysis, { years, theme, countries, allMetrics }), sub === "rank" && /* @__PURE__ */ React.createElement(RankingAnalysis, { years, theme, countries, allMetrics }));
-  }
-  const MAX_EXTRACT_CHARS = 9e3;
-  async function extractFileContent(file) {
-    const ext = file.name.split(".").pop().toLowerCase();
-    if (ext === "csv" || ext === "xlsx" || ext === "xls") {
-      if (!window.XLSX) throw new Error("\u05E1\u05E4\u05E8\u05D9\u05D9\u05EA \u05E7\u05E8\u05D9\u05D0\u05EA \u05D4\u05D0\u05E7\u05E1\u05DC \u05DC\u05D0 \u05E0\u05D8\u05E2\u05E0\u05D4 (\u05D1\u05D3\u05D5\u05E7 \u05D7\u05D9\u05D1\u05D5\u05E8 \u05DC\u05D0\u05D9\u05E0\u05D8\u05E8\u05E0\u05D8 \u05D5\u05E8\u05E2\u05E0\u05DF).");
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      let text = "";
-      wb.SheetNames.forEach((name) => {
-        const sheet = wb.Sheets[name];
-        const csv = XLSX.utils.sheet_to_csv(sheet);
-        text += `
-== \u05D2\u05D9\u05DC\u05D9\u05D5\u05DF: ${name} ==
-${csv}`;
-      });
-      return text.slice(0, MAX_EXTRACT_CHARS);
-    }
-    if (ext === "pdf") {
-      if (!window.pdfjsLib) throw new Error("\u05E1\u05E4\u05E8\u05D9\u05D9\u05EA \u05E7\u05E8\u05D9\u05D0\u05EA \u05D4-PDF \u05DC\u05D0 \u05E0\u05D8\u05E2\u05E0\u05D4 (\u05D1\u05D3\u05D5\u05E7 \u05D7\u05D9\u05D1\u05D5\u05E8 \u05DC\u05D0\u05D9\u05E0\u05D8\u05E8\u05E0\u05D8 \u05D5\u05E8\u05E2\u05E0\u05DF).");
-      const buf = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-      let text = "";
-      for (let i = 1; i <= pdf.numPages && text.length < MAX_EXTRACT_CHARS; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map((it) => it.str).join(" ") + "\n";
-      }
-      return text.slice(0, MAX_EXTRACT_CHARS);
-    }
-    throw new Error(`\u05E1\u05D5\u05D2 \u05E7\u05D5\u05D1\u05E5 \u05DC\u05D0 \u05E0\u05EA\u05DE\u05DA: .${ext}. \u05D9\u05E9 \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA Excel (.xlsx/.xls), CSV \u05D0\u05D5 PDF.`);
-  }
-  function parseParagraphSections(text) {
-    return text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-  }
-  function SurveyDrillIn({ theme }) {
-    const [file, setFile] = useState(null);
-    const [extracting, setExtracting] = useState(false);
-    const [extractError, setExtractError] = useState(null);
-    const [extractedPreviewLen, setExtractedPreviewLen] = useState(0);
-    const [extractedText, setExtractedText] = useState(null);
-    const [analyzing, setAnalyzing] = useState(false);
-    const [analysisError, setAnalysisError] = useState(null);
-    const [analysis, setAnalysis] = useState(null);
-    const fileInputRef = useRef(null);
-    const onFileSelected = async (f) => {
-      if (!f) return;
-      setFile(f);
-      setAnalysis(null);
-      setAnalysisError(null);
-      setExtracting(true);
-      setExtractError(null);
-      try {
-        const text = await extractFileContent(f);
-        setExtractedText(text);
-        setExtractedPreviewLen(text.length);
-      } catch (err) {
-        setExtractError(String(err.message || err));
-        setExtractedText(null);
-      }
-      setExtracting(false);
-    };
-    const runAnalysis = async () => {
-      if (!extractedText) return;
-      setAnalyzing(true);
-      setAnalysisError(null);
-      try {
-        const res = await DataAPI.generateInsight("survey_analysis", { extracted_text: extractedText, filename: file == null ? void 0 : file.name });
-        setAnalysis(sanitizeAiText(res.text));
-      } catch (err) {
-        setAnalysisError(String(err.message || err));
-      }
-      setAnalyzing(false);
-    };
-    const reset = () => {
-      setFile(null);
-      setExtractedText(null);
-      setAnalysis(null);
-      setExtractError(null);
-      setAnalysisError(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, "\u{1F52C} Drill In \u2014 \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E1\u05E7\u05E8\u05D9 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "\u05D4\u05E2\u05DC\u05D4 \u05E7\u05D5\u05D1\u05E5 \u05E1\u05E7\u05E8 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05E0\u05DB\u05E0\u05E1\u05EA (Excel / CSV / PDF) \u05DC\u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05E2\u05DE\u05D9\u05E7 \u05DC\u05E4\u05D9 \u05E1\u05D2\u05DE\u05E0\u05D8\u05D9\u05DD. \u05D4\u05E7\u05D5\u05D1\u05E5 \u05E0\u05E7\u05E8\u05D0 \u05D5\u05DE\u05E2\u05D5\u05D1\u05D3 \u05D1\u05D3\u05E4\u05D3\u05E4\u05DF \u05D1\u05DC\u05D1\u05D3 \u2014 ", /* @__PURE__ */ React.createElement("b", null, "\u05D0\u05D9\u05E0\u05D5 \u05E0\u05E9\u05DE\u05E8"), " \u05D1\u05DE\u05E2\u05E8\u05DB\u05EA.")), !file && /* @__PURE__ */ React.createElement(
-      "label",
-      {
-        className: "flex flex-col items-center justify-center gap-3 rounded-2xl border-4 border-dashed cursor-pointer transition hover:opacity-80",
-        style: { borderColor: hexA(theme.solid, 0.35), background: hexA(theme.solid, 0.04), minHeight: 260 }
-      },
-      /* @__PURE__ */ React.createElement("div", { style: { width: 64, height: 64, borderRadius: "50%", background: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 32, color: "white" } }, "\u2B07\uFE0F")),
-      /* @__PURE__ */ React.createElement("p", { className: "text-primary font-semibold" }, "\u05DC\u05D7\u05E5 \u05DB\u05D3\u05D9 \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05E7\u05D5\u05D1\u05E5 \u05E1\u05E7\u05E8"),
-      /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "Excel (.xlsx/.xls) \xB7 CSV \xB7 PDF"),
-      /* @__PURE__ */ React.createElement("input", { ref: fileInputRef, type: "file", accept: ".xlsx,.xls,.csv,.pdf", className: "hidden", onChange: (e) => onFileSelected(e.target.files[0]) })
-    ), file && /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm text-primary font-medium" }, "\u{1F4C4} ", file.name), /* @__PURE__ */ React.createElement("button", { onClick: reset, className: "text-xs text-red-500" }, "\u{1F5D1}\uFE0F \u05D4\u05E1\u05E8 \u05E7\u05D5\u05D1\u05E5 \u05D5\u05D1\u05D7\u05E8 \u05D0\u05D7\u05E8")), extracting && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary" }, "\u{1F504} \u05E7\u05D5\u05E8\u05D0 \u05D0\u05EA \u05D4\u05E7\u05D5\u05D1\u05E5..."), extractError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-red-500" }, "\u26A0\uFE0F ", extractError), extractedText && !extracting && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "\u2705 \u05E0\u05E7\u05E8\u05D0\u05D5 ", fmtNum(extractedPreviewLen), " \u05EA\u05D5\u05D5\u05D9\u05DD \u05DE\u05D4\u05E7\u05D5\u05D1\u05E5 (\u05D0\u05DD \u05D4\u05E7\u05D5\u05D1\u05E5 \u05D0\u05E8\u05D5\u05DA, \u05D9\u05D9\u05EA\u05DB\u05DF \u05E9\u05E0\u05DC\u05E7\u05D7 \u05E8\u05E7 \u05D7\u05DC\u05E7\u05D5 \u05D4\u05E8\u05D0\u05E9\u05D5\u05DF)."), extractedText && /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: runAnalysis,
-        disabled: analyzing,
-        className: `px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50`
-      },
-      analyzing ? "\u{1F504} \u05DE\u05E0\u05EA\u05D7..." : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7"
-    ), analysisError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-red-500" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", analysisError), analysis && /* @__PURE__ */ React.createElement("div", { className: "space-y-4 border-t divider pt-4", style: { animation: "fadeIn 0.3s ease-in" } }, parseParagraphSections(analysis).map((para, i) => /* @__PURE__ */ React.createElement("p", { key: i, className: "text-sm text-primary leading-relaxed whitespace-pre-line border-r-4 pr-4", style: { borderColor: theme.solid } }, para)))));
-  }
-  function NavAssistant() {
-    const [open, setOpen] = useState(false);
-    const [messages, setMessages] = useState([
-      { role: "assistant", text: "\u{1F44B} \u05D4\u05D9\u05D9! \u05D0\u05E0\u05D9 \u05E2\u05D5\u05D6\u05E8 \u05D4\u05E0\u05D9\u05D5\u05D5\u05D8 \u05E9\u05DC \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA. \u05D0\u05E0\u05D9 \u05D9\u05DB\u05D5\u05DC \u05DC\u05E2\u05D6\u05D5\u05E8 \u05DC\u05DA \u05DC\u05D4\u05D1\u05D9\u05DF \u05D0\u05D9\u05DA \u05DC\u05D4\u05E9\u05EA\u05DE\u05E9 \u05D1\u05D0\u05EA\u05E8, \u05DE\u05D4 \u05DB\u05DC \u05DE\u05E1\u05DA \u05E2\u05D5\u05E9\u05D4, \u05D5\u05D0\u05D9\u05DA \u05DE\u05D7\u05D5\u05E9\u05D1\u05D9\u05DD \u05D4\u05DE\u05D3\u05D3\u05D9\u05DD \u05D5\u05D4\u05E0\u05D5\u05E1\u05D7\u05D0\u05D5\u05EA. \u05D1\u05DE\u05D4 \u05D0\u05D5\u05DB\u05DC \u05DC\u05E2\u05D6\u05D5\u05E8?" }
-    ]);
-    const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
-    const scrollRef = useRef(null);
-    useEffect(() => {
-      var _a;
-      (_a = scrollRef.current) == null ? void 0 : _a.scrollTo(0, scrollRef.current.scrollHeight);
-    }, [messages, open]);
-    const send = async () => {
-      const q = input.trim();
-      if (!q || loading) return;
-      const nextMessages = [...messages, { role: "user", text: q }];
-      setMessages(nextMessages);
-      setInput("");
-      setLoading(true);
-      try {
-        const history = nextMessages.slice(-8).map((m) => `${m.role === "user" ? "\u05DE\u05E9\u05EA\u05DE\u05E9" : "\u05E2\u05D5\u05D6\u05E8"}: ${m.text}`).join("\n");
-        const res = await DataAPI.generateInsight("nav_help", { question: q, history });
-        setMessages((prev) => [...prev, { role: "assistant", text: sanitizeAiText(res.text) }]);
-      } catch (err) {
-        setMessages((prev) => [...prev, { role: "assistant", text: "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E4\u05E0\u05D9\u05D9\u05D4 \u05DC\u05E2\u05D5\u05D6\u05E8: " + String(err.message || err) }]);
-      }
-      setLoading(false);
-    };
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: () => setOpen((o) => !o),
-        title: "\u05E2\u05D5\u05D6\u05E8 \u05E0\u05D9\u05D5\u05D5\u05D8 AI",
-        style: {
-          position: "fixed",
-          bottom: 24,
-          left: 24,
-          zIndex: 9999,
-          width: 56,
-          height: 56,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #86efac, #4ade80)",
-          border: "none",
-          cursor: "pointer",
-          boxShadow: "0 0 0 6px rgba(74,222,128,0.15), 0 4px 14px rgba(0,0,0,0.2)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 26
-        }
-      },
-      open ? "\u2715" : "\u{1F4AC}"
-    ), open && /* @__PURE__ */ React.createElement("div", { dir: "rtl", className: "card border", style: {
-      position: "fixed",
-      bottom: 90,
-      left: 24,
-      zIndex: 9998,
-      width: 380,
-      maxWidth: "90vw",
-      height: 500,
-      maxHeight: "70vh",
-      borderRadius: 16,
-      boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden"
-    } }, /* @__PURE__ */ React.createElement("div", { className: "p-3 border-b divider flex items-center gap-2", style: { background: "linear-gradient(135deg, #86efac33, #4ade8033)" } }, /* @__PURE__ */ React.createElement("span", { className: "text-lg" }, "\u{1F4AC}"), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary text-sm" }, "\u05E2\u05D5\u05D6\u05E8 \u05E0\u05D9\u05D5\u05D5\u05D8 AI")), /* @__PURE__ */ React.createElement("div", { ref: scrollRef, className: "flex-1 overflow-y-auto p-3 space-y-2" }, messages.map((m, i) => /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        key: i,
-        className: `text-sm rounded-xl px-3 py-2 max-w-[85%] ${m.role === "user" ? "mr-auto text-white" : "ml-auto"}`,
-        style: m.role === "user" ? { background: "#4ade80" } : { background: "var(--hover-bg)", color: "var(--text-primary)" }
-      },
-      m.text
-    )), loading && /* @__PURE__ */ React.createElement("div", { className: "text-xs text-muted" }, "\u{1F504} \u05D7\u05D5\u05E9\u05D1...")), /* @__PURE__ */ React.createElement("div", { className: "p-3 border-t divider flex gap-2" }, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        value: input,
-        onChange: (e) => setInput(e.target.value),
-        onKeyDown: (e) => e.key === "Enter" && send(),
-        placeholder: "\u05E9\u05D0\u05DC \u05D0\u05D5\u05EA\u05D9 \u05E2\u05DC \u05D4\u05E9\u05D9\u05DE\u05D5\u05E9 \u05D1\u05D0\u05EA\u05E8...",
-        className: "input-field flex-1 border rounded-lg px-3 py-2 text-sm"
-      }
-    ), /* @__PURE__ */ React.createElement("button", { onClick: send, disabled: loading, className: "bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm" }, "\u27A4"))));
-  }
-  function App() {
-    const [authed, setAuthed] = useState(false);
-    const [password, setPassword] = useState("tourism.marketing");
-    const [activeTab, setActiveTab] = useState("t1");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [mode, setMode] = useState("light");
-    const [systemDark, setSystemDark] = useState(false);
-    const [countries, setCountries] = useState([]);
-    const [allMetrics, setAllMetrics] = useState([]);
-    const [dataLoading, setDataLoading] = useState(true);
-    const [dataError, setDataError] = useState(null);
-    const loadData = useCallback(async () => {
-      setDataLoading(true);
-      try {
-        const [c, m] = await Promise.all([DataAPI.fetchCountries(), DataAPI.fetchAllMetrics()]);
-        setCountries(c);
-        setAllMetrics(m);
-        setJewishPopBounds(m.map((r) => r.jewish_population));
-        setDataError(null);
-      } catch (err) {
-        console.error(err);
-        setDataError(String(err.message || err));
-      }
-      setDataLoading(false);
-    }, []);
-    useEffect(() => {
-      DataAPI.getSetting("site_password", "tourism.marketing").then(setPassword);
-      loadData();
-    }, [loadData]);
-    useEffect(() => {
-      const checkClock = () => {
-        const hour = (/* @__PURE__ */ new Date()).getHours();
-        const isNight = hour >= 19 || hour < 6;
-        setSystemDark(isNight);
-      };
-      checkClock();
-      const interval = setInterval(checkClock, 60 * 1e3);
-      return () => clearInterval(interval);
-    }, []);
-    const isDark = mode === "dark" || mode === "system" && systemDark;
-    const isDrillIn = activeTab === "drillin";
-    const theme = isDrillIn ? DRILLIN_THEME : TAB_THEMES[activeTab];
-    if (!authed) return /* @__PURE__ */ React.createElement(LoginScreen, { onLogin: () => setAuthed(true), currentPassword: password });
-    return /* @__PURE__ */ React.createElement("div", { dir: "rtl", "data-mode": isDark ? "dark" : "light", className: "app-page min-h-screen transition-colors duration-300" }, /* @__PURE__ */ React.createElement(GlobalStyles, null), /* @__PURE__ */ React.createElement("header", { className: "app-nav sticky top-0 z-30 border-b shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(MinistryLogo, { size: 36 }), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-primary hidden sm:block" }, "\u{1F9F3} \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 BI")), /* @__PURE__ */ React.createElement("nav", { className: "flex-1 flex justify-center" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl overflow-x-auto max-w-full", style: { background: "var(--hover-bg)" } }, Object.entries(TAB_THEMES).map(([key, t]) => /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        key,
-        onClick: () => setActiveTab(key),
-        className: `px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${activeTab === key ? `bg-gradient-to-l ${t.grad} text-white shadow-md` : "text-secondary hoverable"}`
-      },
-      t.name
-    )), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: () => setActiveTab("drillin"),
-        className: `px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${isDrillIn ? `bg-gradient-to-l ${DRILLIN_THEME.grad} text-white shadow-md` : "text-secondary hoverable"}`
-      },
-      DRILLIN_THEME.navLabel
-    ))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSidebarOpen(true), className: "p-2 rounded-xl hoverable transition shrink-0 text-secondary" }, "\u2699\uFE0F"))), /* @__PURE__ */ React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" }, !isDrillIn && /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4 mb-6", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, theme.name), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "\u{1F4C5} ", theme.years[0], "\u2013", theme.years[theme.years.length - 1], " \xB7 \u{1F30D} ", countries.length, " \u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D1\u05DE\u05D0\u05D2\u05E8")), isDrillIn && /* @__PURE__ */ React.createElement(SurveyDrillIn, { theme: DRILLIN_THEME }), !isDrillIn && dataLoading && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "\u{1F504} \u05D8\u05D5\u05E2\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DE\u05D4\u05DE\u05D0\u05D2\u05E8..."), !isDrillIn && dataError && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-red-500" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD: ", dataError, /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary" }, "\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA config.js (SUPABASE_URL / ANON_KEY) \u05D5\u05D0\u05EA \u05DE\u05D3\u05D9\u05E0\u05D9\u05D5\u05EA \u05D4-RLS.")), !isDrillIn && !dataLoading && !dataError && /* @__PURE__ */ React.createElement(TabContent, { theme, years: theme.years, countries, allMetrics })), /* @__PURE__ */ React.createElement("footer", { className: "text-center text-xs text-muted py-8" }, "\u{1F9F3} \u05DE\u05E2\u05E8\u05DB\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7 \u05E9\u05D9\u05D5\u05D5\u05E7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \xB7 \u05DE\u05E9\u05E8\u05D3 \u05D4\u05EA\u05D9\u05D9\u05E8\u05D5\u05EA"), /* @__PURE__ */ React.createElement(SettingsSidebar, { open: sidebarOpen, onClose: () => setSidebarOpen(false), mode, setMode, currentPassword: password, onChangePassword: setPassword, countries, allMetrics, onRefresh: loadData }), /* @__PURE__ */ React.createElement(NavAssistant, null));
-  }
-  ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
-})();
+    return /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, "\u{1F3E2} \u05E0\u05D9\u05EA\u05D5\u05D7 \u05EA\u05E8\u05D5\u05DE\u05EA \u05DC\u05E9\u05DB\u05D4 \u2014 ", country.name_he, " \u2B50", /* @__PURE__ */ React.createElement(InfoTip, { text: "\u05DE\u05E9\u05D5\u05D5\u05D4 \u05DC\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05D3\u05D5\u05DE\u05D5\u05EA \u05D1\u05DE\u05E1\u05E4\u05E8 \u05DE\u05D0\u05E4\u05D9\u05D9\u05E0\u05D9\u05DD \u05D1\u05DE\u05E7\u05D1\u05D9\u05DC (\u05E8\u05DE\u05EA \u05E4\u05D9\u05EA\u05D5\u05D7, \u05EA\u05D5\u05E6\u05E8 \u05DC\u05E0\u05E4\u05E9, \u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA, \u05DE\u05E8\u05D7\u05E7 \u05DE\u05D9\u05E9\u05E8\u05D0\u05DC) \u05E9\u05D0\u05D9\u05DF \u05D1\u05D4\u05DF \u05DC\u05E9\u05DB\u05D4. \u26A0\uFE0F \u05D0\u05D9\u05DF \u05E2\u05D3\u05D9\u05D9\u05DF \u05E0\u05D5\u05D4\u05DC \u05E8\u05E9\u05DE\u05D9 \u05D1\u05DE\u05E9\u05E8\u05D3 \u05DC\u05DE\u05D3\u05D9\u05D3\u05EA \u05D4\u05E6\u05DC\u05D7\u05EA \u05DC\u05E9\u05DB\u05D4 \u2014 \u05D6\u05D4\u05D5 \u05DE\u05D5\u05D3\u05DC \u05E8\u05D0\u05E9\u05D5\u05E0\u05D9, \u05E4\u05EA\u05D5\u05D7 \u05DC\u05E9\u05D9\u05E0\u05D5\u05D9." })), /* @__PURE__ */ React.createElement("button", { onClick: run, disabled: loading, className: `px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50` }, loading ? "\u{1F504} \u05DE\u05E0\u05EA\u05D7..." : text ? "\u{1F504} \u05D4\u05E8\u05E5 \u05DE\u05D7\u05D3\u05E9" : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7")), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mb-3" }, "\u05DE\u05D5\u05E9\u05D5\u05D5\u05D4 \u05DE\u05D5\u05DC: ", comparables.map((c) => `${c.country.flag || ""} ${c.country.name_he}`).join(", "), " (\u05DE\u05D3\u05D9\u05E0\u05D5\u05EA \u05DC\u05DC\u05D0 \u05DC\u05E9\u05DB\u05D4, \u05D1\u05E0\u05E4\u05D7 \u05EA\u05D9\u05D9\u05E8\u05D5\u05EA \u05D9\u05D5\u05E6\u05D0\u05EA \u05D3\u05D5\u05DE\u05D4)"), /* @__PURE__ */ React.createElement("div", { className: "grid gap-2 mb-3", style: { gridTemplateColumns: `repeat(${comparables.length + 1}, minmax(0,1fr))` } }, /* @__PURE__ */ React.createElement("div", { className: "text-center p-2 rounded-lg", style: { background: hexA(theme.solid, 0.12) } }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-secondary" }, country.name_he, " \u2B50"), /* @__PURE__ */ React.createElement("div", { className: "font-bold text-primary text-sm" }, metrics.roi, "%")), comparables.map((c) => /* @__PURE__ */ React.createElement("div", { key: c.country.id, className: "text-center p-2 rounded-lg", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("div", { className: "text-xs text-secondary" }, c.country.name_he), /* @__PURE__ */ React.createElement("div", { className: "font-bold text-primary text-sm" }, c.metrics.roi, "%")))), error && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", error), text && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, text), !text && !loading && !error && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, '\u05DC\u05D7\u05E5 "\u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7" \u05DC\u05E7\u05D1\u05DC\u05EA \u05D4\u05E2\u05E8\u05DB\u05D4 \u05DE\u05E0\u05D5\u05DE\u05E7\u05EA \u05E9\u05DC \u05EA\u05E8\u05D5\u05DE\u05EA \u05D4\u05DC\u05E9\u05DB
