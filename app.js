@@ -74,8 +74,10 @@
     if (!filtered.length) return null;
     filtered.sort((a, b) => a.year - b.year);
     const visitorsByYear = {};
+    const advisoryByYear = {};
     filtered.forEach((r) => {
       visitorsByYear[r.year] = (r.entries_to_israel_thousands || 0) * 1e3;
+      advisoryByYear[r.year] = r.travel_advisory;
     });
     const avg = (key) => filtered.reduce((s, r) => s + (r[key] || 0), 0) / filtered.length;
     const sumVisitors = filtered.reduce((s, r) => s + (r.entries_to_israel_thousands || 0) * 1e3, 0);
@@ -106,6 +108,7 @@
     const totalScore = Math.round(sentiment * 0.35 + religiousAffinity * 0.25 + roiScore * 0.25 + growthTrend * 0.15);
     return {
       visitorsByYear,
+      advisoryByYear,
       sumVisitors,
       sumOutbound,
       avgHdi,
@@ -648,6 +651,12 @@
     };
     return /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-5 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-4" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, "\u{1F3DB}\uFE0F \u05E0\u05D9\u05EA\u05D5\u05D7 \u05D4\u05DE\u05D5\u05E2\u05E6\u05D4 \u2014 ", country.name_he), /* @__PURE__ */ React.createElement("button", { onClick: run, disabled: loading, className: `px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50` }, loading ? "\u{1F504} \u05D4\u05DE\u05D5\u05E2\u05E6\u05D4 \u05DE\u05EA\u05DB\u05E0\u05E1\u05EA..." : data ? "\u{1F504} \u05D4\u05E8\u05E5 \u05DE\u05D7\u05D3\u05E9" : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7")), error && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", error), !data && !loading && !error && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, '\u05DC\u05D7\u05E5 "\u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7" \u05DB\u05D3\u05D9 \u05DC\u05E7\u05D1\u05DC \u05E0\u05D9\u05EA\u05D5\u05D7 \u05D0\u05E1\u05D8\u05E8\u05D8\u05D2\u05D9 \u05DE\u05E2\u05DE\u05D9\u05E7: \u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD, \u05DE\u05D0\u05E4\u05D9\u05D9\u05E0\u05D9\u05DD \u05DB\u05DC\u05DB\u05DC\u05D9\u05D9\u05DD, \u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA, \u05D0\u05D4\u05D3\u05D4 \u05DC\u05D9\u05E9\u05E8\u05D0\u05DC, \u05D5\u05E1\u05D9\u05DB\u05D5\u05DD \u05D4"\u05DE\u05D5\u05E2\u05E6\u05D4" \u05E2\u05DD \u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC.'), data && /* @__PURE__ */ React.createElement("div", { className: "space-y-4", style: { animation: "fadeIn 0.3s ease-in" } }, COUNCIL_SECTIONS.map((s) => data[s.key] ? /* @__PURE__ */ React.createElement("div", { key: s.key, className: "border-r-4 pr-4", style: { borderColor: theme.solid } }, /* @__PURE__ */ React.createElement("h5", { className: "font-semibold text-primary text-sm mb-1.5" }, s.emoji, " ", s.label), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary leading-relaxed whitespace-pre-line" }, data[s.key])) : null), data.final_score != null && /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-center gap-2 pt-2 border-t divider" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm text-secondary" }, "\u{1F3C6} \u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC:"), /* @__PURE__ */ React.createElement("span", { className: "text-2xl font-bold", style: { color: theme.solid } }, data.final_score, "/100"))));
   }
+  const COMPARE_METRIC_DEFS = [
+    { key: "sentiment", label: "\u2764\uFE0F \u05D0\u05D4\u05D3\u05D4 \u05E4\u05E8\u05D5-\u05D9\u05E9\u05E8\u05D0\u05DC\u05D9\u05EA", weight: 0.35, max: 100 },
+    { key: "religiousAffinity", label: "\u{1F54E} \u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA", weight: 0.25, max: 100 },
+    { key: "roiScore", label: "\u{1F4B9} \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA", weight: 0.25, max: 100 },
+    { key: "growthTrend", label: "\u{1F4C8} \u05DE\u05D2\u05DE\u05EA \u05E6\u05DE\u05D9\u05D7\u05D4", weight: 0.15, max: 100 }
+  ];
   function ComparativeAnalysis({ years, theme, countries, allMetrics }) {
     var _a, _b, _c, _d;
     const [c1, setC1] = useState(((_a = countries[0]) == null ? void 0 : _a.name_he) || "");
@@ -658,6 +667,9 @@
     }, [countries]);
     const r1 = useResolvedCountry(c1, countries, allMetrics, years);
     const r2 = useResolvedCountry(c2, countries, allMetrics, years);
+    const [conclusion, setConclusion] = useState(null);
+    const [conclusionLoading, setConclusionLoading] = useState(false);
+    const [conclusionError, setConclusionError] = useState(null);
     const lineData = useMemo(() => {
       if (!r1.metrics || !r2.metrics) return null;
       return {
@@ -671,10 +683,10 @@
     const barData = useMemo(() => {
       if (!r1.metrics || !r2.metrics) return null;
       return {
-        labels: ["\u2764\uFE0F \u05D0\u05D4\u05D3\u05D4", "\u{1F54E} \u05D6\u05D9\u05E7\u05D4 \u05D3\u05EA\u05D9\u05EA", "\u{1F4C8} \u05E6\u05DE\u05D9\u05D7\u05D4", "\u{1F3C6} \u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC"],
+        labels: COMPARE_METRIC_DEFS.map((m) => m.label),
         datasets: [
-          { label: c1, data: [r1.metrics.sentiment, r1.metrics.religiousAffinity, r1.metrics.growthTrend, r1.metrics.totalScore], backgroundColor: theme.solid },
-          { label: c2, data: [r2.metrics.sentiment, r2.metrics.religiousAffinity, r2.metrics.growthTrend, r2.metrics.totalScore], backgroundColor: "#94a3b8" }
+          { label: c1, data: COMPARE_METRIC_DEFS.map((m) => r1.metrics[m.key]), backgroundColor: theme.solid },
+          { label: c2, data: COMPARE_METRIC_DEFS.map((m) => r2.metrics[m.key]), backgroundColor: "#94a3b8" }
         ]
       };
     }, [r1.metrics, r2.metrics, c1, c2, theme]);
@@ -685,7 +697,44 @@
         datasets: [{ data: [r1.metrics.roi, r2.metrics.roi], backgroundColor: [theme.solid, "#94a3b8"], borderRadius: 6 }]
       };
     }, [r1.metrics, r2.metrics, c1, c2, theme]);
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-4 max-w-2xl" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E6} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D0'", value: c1, onChange: setC1, countries, exclude: [c2] }), /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E7} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D1'", value: c2, onChange: setC2, countries, exclude: [c1] })), (r1.loading || r2.loading) && /* @__PURE__ */ React.createElement(AiLoadingState, { name: r1.loading ? c1 : c2 }), !r1.loading && !r2.loading && (r1.error || r2.error) && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, "\u26A0\uFE0F \u05E0\u05DB\u05E9\u05DC\u05D4 \u05D4\u05E9\u05DC\u05DE\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, r1.error || r2.error)), !r1.loading && !r2.loading && r1.metrics && r2.metrics && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, { onExcel: () => exportToExcel(`\u05D4\u05E9\u05D5\u05D5\u05D0\u05D4-${c1}-${c2}`, [
+    const gap = useMemo(() => {
+      if (!r1.metrics || !r2.metrics) return null;
+      const leader = r1.metrics.totalScore >= r2.metrics.totalScore ? { name: c1, m: r1.metrics } : { name: c2, m: r2.metrics };
+      const trailer = leader.name === c1 ? { name: c2, m: r2.metrics } : { name: c1, m: r1.metrics };
+      const scoreDiff = Math.round(Math.abs(r1.metrics.totalScore - r2.metrics.totalScore));
+      let topDriver = null, topDriverDiff = -1;
+      COMPARE_METRIC_DEFS.forEach((m) => {
+        const diff = Math.abs(leader.m[m.key] - trailer.m[m.key]) * m.weight;
+        if (diff > topDriverDiff) {
+          topDriverDiff = diff;
+          topDriver = m;
+        }
+      });
+      return { leader, trailer, scoreDiff, topDriver };
+    }, [r1.metrics, r2.metrics, c1, c2]);
+    const runConclusion = async () => {
+      setConclusionLoading(true);
+      setConclusionError(null);
+      try {
+        const res = await DataAPI.generateInsight("comparative_analysis", {
+          c1,
+          c2,
+          m1: { sentiment: r1.metrics.sentiment, religiousAffinity: r1.metrics.religiousAffinity, roi: r1.metrics.roi, growthTrend: r1.metrics.growthTrend, totalScore: r1.metrics.totalScore },
+          m2: { sentiment: r2.metrics.sentiment, religiousAffinity: r2.metrics.religiousAffinity, roi: r2.metrics.roi, growthTrend: r2.metrics.growthTrend, totalScore: r2.metrics.totalScore }
+        });
+        setConclusion(sanitizeAiText(res.text));
+      } catch (err) {
+        setConclusionError(String(err.message || err));
+      }
+      setConclusionLoading(false);
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-4 max-w-2xl" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E6} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D0'", value: c1, onChange: (v) => {
+      setC1(v);
+      setConclusion(null);
+    }, countries, exclude: [c2] }), /* @__PURE__ */ React.createElement(CountryPicker, { label: "\u{1F1E7} \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D1'", value: c2, onChange: (v) => {
+      setC2(v);
+      setConclusion(null);
+    }, countries, exclude: [c1] })), (r1.loading || r2.loading) && /* @__PURE__ */ React.createElement(AiLoadingState, { name: r1.loading ? c1 : c2 }), !r1.loading && !r2.loading && (r1.error || r2.error) && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, "\u26A0\uFE0F \u05E0\u05DB\u05E9\u05DC\u05D4 \u05D4\u05E9\u05DC\u05DE\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, r1.error || r2.error)), !r1.loading && !r2.loading && r1.metrics && r2.metrics && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, { onExcel: () => exportToExcel(`\u05D4\u05E9\u05D5\u05D5\u05D0\u05D4-${c1}-${c2}`, [
       { name: "\u05DE\u05D2\u05DE\u05EA \u05DE\u05D1\u05E7\u05E8\u05D9\u05DD", rows: years.map((y) => ({ \u05E9\u05E0\u05D4: y, [c1]: Math.round(r1.metrics.visitorsByYear[y] || 0), [c2]: Math.round(r2.metrics.visitorsByYear[y] || 0) })) },
       { name: "\u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D3\u05D3\u05D9\u05DD", rows: [
         { \u05DE\u05D3\u05D3: "\u05D0\u05D4\u05D3\u05D4", [c1]: r1.metrics.sentiment, [c2]: r2.metrics.sentiment },
@@ -694,7 +743,19 @@
         { \u05DE\u05D3\u05D3: "\u05E6\u05DE\u05D9\u05D7\u05D4", [c1]: r1.metrics.growthTrend, [c2]: r2.metrics.growthTrend },
         { \u05DE\u05D3\u05D3: "\u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC", [c1]: r1.metrics.totalScore, [c2]: r2.metrics.totalScore }
       ] }
-    ]) }), /* @__PURE__ */ React.createElement("div", { className: "flex gap-6 flex-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_c = r1.country) == null ? void 0 : _c.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c1), r1.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_d = r2.country) == null ? void 0 : _d.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c2), r2.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4C8} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D2\u05DE\u05EA \u05DE\u05D1\u05E7\u05E8\u05D9\u05DD"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u2696\uFE0F \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D3\u05D3\u05D9\u05DD \u05DE\u05E8\u05DB\u05D6\u05D9\u05D9\u05DD (\u05E1\u05D5\u05DC\u05DD 0-100)"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm flex items-center gap-1.5" }, "\u{1F4B9} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (%)", /* @__PURE__ */ React.createElement(InfoTip, { text: "\u05DE\u05D5\u05E6\u05D2 \u05D1\u05D2\u05E8\u05E3 \u05E0\u05E4\u05E8\u05D3 \u05DB\u05D9 \u05E1\u05D5\u05DC\u05DD \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05DC\u05D5 \u05E7\u05D8\u05DF \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05EA \u05DE\u05E9\u05D0\u05E8 \u05D4\u05DE\u05D3\u05D3\u05D9\u05DD (\u05D1\u05D3\u05E8\u05DA \u05DB\u05DC\u05DC \u05E4\u05D7\u05D5\u05EA \u05DE-1-2%)." })), roiChartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: roiChartData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })))));
+    ]) }), /* @__PURE__ */ React.createElement("div", { className: "flex gap-6 flex-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_c = r1.country) == null ? void 0 : _c.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c1), r1.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_d = r2.country) == null ? void 0 : _d.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c2), r2.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null))), gap && /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl p-4 border flex items-center gap-3", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, "\u{1F3AF}"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary" }, /* @__PURE__ */ React.createElement("b", null, gap.leader.name), " \u05DE\u05D5\u05D1\u05D9\u05DC \u05E2\u05DC ", /* @__PURE__ */ React.createElement("b", null, gap.trailer.name), " \u05D1-", /* @__PURE__ */ React.createElement("b", null, gap.scoreDiff), " \u05E0\u05E7\u05D5\u05D3\u05D5\u05EA \u05E6\u05D9\u05D5\u05DF \u05DB\u05D5\u05DC\u05DC \u2014 \u05D4\u05E4\u05E2\u05E8 \u05E0\u05D5\u05D1\u05E2 \u05D1\u05E2\u05D9\u05E7\u05E8 \u05DE", /* @__PURE__ */ React.createElement("b", null, gap.topDriver.label), " (", gap.leader.m[gap.topDriver.key], " \u05DE\u05D5\u05DC ", gap.trailer.m[gap.topDriver.key], ").")), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F4C8} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D2\u05DE\u05EA \u05DE\u05D1\u05E7\u05E8\u05D9\u05DD"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false } }), /* @__PURE__ */ React.createElement("div", { className: "mt-3 space-y-1" }, [{ name: c1, m: r1.metrics, color: theme.solid }, { name: c2, m: r2.metrics, color: "#94a3b8" }].map(({ name, m, color }) => /* @__PURE__ */ React.createElement("div", { key: name, className: "flex items-center gap-1.5 text-xs" }, /* @__PURE__ */ React.createElement("span", { className: "w-16 shrink-0 text-secondary truncate" }, name), /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 flex-1" }, years.map((y) => /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        key: y,
+        title: `${y}: ${m.advisoryByYear[y] === 2 ? "\u05D0\u05D6\u05D4\u05E8\u05EA \u05DE\u05E1\u05E2" : "\u05EA\u05E7\u05D9\u05DF"}`,
+        className: "flex-1 h-3 rounded-sm",
+        style: { background: m.advisoryByYear[y] === 2 ? "#ef4444" : hexA(color, 0.3) }
+      }
+    ))))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, background: "#ef4444", display: "inline-block", borderRadius: 2 } }), " \u05E9\u05E0\u05D9\u05DD \u05E2\u05DD \u05D0\u05D6\u05D4\u05E8\u05EA \u05DE\u05E1\u05E2 \u2014 \u05D1\u05D3\u05E7\u05D5 \u05D0\u05DD \u05D4\u05DF \u05DE\u05EA\u05D5\u05D0\u05DE\u05D5\u05EA \u05DC\u05D9\u05E8\u05D9\u05D3\u05D5\u05EA \u05D1\u05D2\u05E8\u05E3"))), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u2696\uFE0F \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05DE\u05D3\u05D3\u05D9\u05DD \u05DE\u05E8\u05DB\u05D6\u05D9\u05D9\u05DD (\u05E1\u05D5\u05DC\u05DD 0-100)"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm flex items-center gap-1.5" }, "\u{1F4B9} \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA \u05E8\u05D5\u05D5\u05D7\u05D9\u05D5\u05EA (%)", /* @__PURE__ */ React.createElement(InfoTip, { text: "\u05DE\u05D5\u05E6\u05D2 \u05D1\u05D2\u05E8\u05E3 \u05E0\u05E4\u05E8\u05D3 \u05DB\u05D9 \u05E1\u05D5\u05DC\u05DD \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05DC\u05D5 \u05E7\u05D8\u05DF \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05EA \u05DE\u05E9\u05D0\u05E8 \u05D4\u05DE\u05D3\u05D3\u05D9\u05DD (\u05D1\u05D3\u05E8\u05DA \u05DB\u05DC\u05DC \u05E4\u05D7\u05D5\u05EA \u05DE-1-2%)." })), roiChartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: roiChartData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "\u{1F3C5} \u05DE\u05D9 \u05DE\u05D5\u05D1\u05D9\u05DC \u05D1\u05DB\u05DC \u05DE\u05D3\u05D3"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, COMPARE_METRIC_DEFS.map((m) => {
+      const v1 = r1.metrics[m.key], v2 = r2.metrics[m.key];
+      const c1Wins = v1 > v2, tie = v1 === v2;
+      return /* @__PURE__ */ React.createElement("div", { key: m.key, className: "flex items-center justify-between text-sm py-1.5 border-b divider last:border-0" }, /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, m.label), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ React.createElement("span", { className: `font-semibold ${c1Wins && !tie ? "" : "text-secondary"}`, style: c1Wins && !tie ? { color: theme.solid } : {} }, c1Wins && !tie && "\u{1F451} ", v1), /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "\xB7"), /* @__PURE__ */ React.createElement("span", { className: `font-semibold ${!c1Wins && !tie ? "" : "text-secondary"}`, style: !c1Wins && !tie ? { color: theme.solid } : {} }, !tie && !c1Wins && "\u{1F451} ", v2)));
+    }))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm" }, "\u{1F4AC} \u05DE\u05E1\u05E7\u05E0\u05D4 \u05D0\u05E1\u05D8\u05E8\u05D8\u05D2\u05D9\u05EA"), /* @__PURE__ */ React.createElement("button", { onClick: runConclusion, disabled: conclusionLoading, className: `px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50` }, conclusionLoading ? "\u{1F504} \u05DE\u05E0\u05EA\u05D7..." : conclusion ? "\u{1F504} \u05D4\u05E8\u05E5 \u05DE\u05D7\u05D3\u05E9" : "\u25B6\uFE0F \u05D1\u05E6\u05E2 \u05E0\u05D9\u05EA\u05D5\u05D7 \u05D4\u05E9\u05D5\u05D5\u05D0\u05EA\u05D9")), conclusionError && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "\u26A0\uFE0F \u05E9\u05D2\u05D9\u05D0\u05D4: ", conclusionError), conclusion && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, conclusion), !conclusion && !conclusionLoading && !conclusionError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, "\u05DC\u05D7\u05E5 \u05DC\u05E7\u05D1\u05DC\u05EA \u05E0\u05D9\u05EA\u05D5\u05D7 \u05DE\u05E0\u05D5\u05E1\u05D7: \u05D0\u05D9\u05D6\u05D5 \u05DE\u05D3\u05D9\u05E0\u05D4 \u05D7\u05D6\u05E7\u05D4 \u05D9\u05D5\u05EA\u05E8, \u05D5\u05DC\u05D0\u05DF \u05DB\u05D3\u05D0\u05D9 \u05DC\u05D4\u05E4\u05E0\u05D5\u05EA \u05DE\u05E9\u05D0\u05D1\u05D9 \u05E9\u05D9\u05D5\u05D5\u05E7."))));
   }
   function RankingAnalysis({ years, theme, countries, allMetrics }) {
     const [selected, setSelected] = useState(countries.slice(0, 5).map((c) => c.name_he));
