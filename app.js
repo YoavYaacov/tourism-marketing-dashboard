@@ -19,6 +19,27 @@
   };
   var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
   const { useState, useEffect, useMemo, useRef, useCallback } = React;
+  const printChartRegistry = /* @__PURE__ */ new Set();
+  function resizeAllChartsForPrint() {
+    printChartRegistry.forEach((c) => {
+      try {
+        c.resize();
+      } catch (e) {
+      }
+    });
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeprint", resizeAllChartsForPrint);
+    if (window.matchMedia) {
+      const mql = window.matchMedia("print");
+      if (mql.addEventListener) mql.addEventListener("change", (e) => {
+        if (e.matches) resizeAllChartsForPrint();
+      });
+      else if (mql.addListener) mql.addListener((e) => {
+        if (e.matches) resizeAllChartsForPrint();
+      });
+    }
+  }
   const sb = window.supabase.createClient(
     window.APP_CONFIG.SUPABASE_URL,
     window.APP_CONFIG.SUPABASE_ANON_KEY
@@ -467,6 +488,10 @@
         .app-nav, .no-print, button { display: none !important; }
         body, .app-page { background: white !important; }
         .card { break-inside: avoid; border: 1px solid #ccc !important; }
+        .grid { display: block !important; }
+        .grid > * { width: 100% !important; margin-bottom: 12px; }
+        canvas { max-width: 100% !important; }
+        .overflow-x-auto { overflow: visible !important; max-width: 100% !important; }
       }
     `);
   }
@@ -522,16 +547,23 @@
     const wrapRef = useRef(null);
     useEffect(() => {
       if (!canvasRef.current) return;
-      if (chartRef.current) chartRef.current.destroy();
+      if (chartRef.current) {
+        printChartRegistry.delete(chartRef.current);
+        chartRef.current.destroy();
+      }
       const mergedOptions = onChartReady ? __spreadProps(__spreadValues({}, options), {
         onResize: (chart) => {
           requestAnimationFrame(() => onChartReady(chart));
         }
       }) : options;
       chartRef.current = new Chart(canvasRef.current.getContext("2d"), { type, data, options: mergedOptions });
+      printChartRegistry.add(chartRef.current);
       if (onChartReady) requestAnimationFrame(() => onChartReady(chartRef.current));
       return () => {
-        if (chartRef.current) chartRef.current.destroy();
+        if (chartRef.current) {
+          printChartRegistry.delete(chartRef.current);
+          chartRef.current.destroy();
+        }
       };
     }, [JSON.stringify(data), JSON.stringify(options), type]);
     return /* @__PURE__ */ React.createElement("div", { ref: wrapRef, style: { height } }, /* @__PURE__ */ React.createElement("canvas", { ref: canvasRef }));
@@ -1561,6 +1593,16 @@
       body: `דרך ⚙️ הגדרות ← "ניהול נתונים" נפתח מסך שמראה את כל המדינות והשנים שבמאגר, עם אפשרות מחיקה לכל שורה. כפתור "➕ הוספת מדינה/שנה" פותח טופס בשני חלקים: קודם פרטי המדינה עצמה (שם, דגל, אזור, מרחק מישראל — חלק מהשדות מתמלאים אוטומטית), ואז הנתונים של שנה ספציפית. אם שוכחים למלא שדה חובה, המערכת מציעה להשלים אותו אוטומטית עם AI, או להשאיר אותו ריק במודע.`
     },
     {
+      emoji: "✈️",
+      title: "מצב תעופתי כיום — לשונית טיסות נתב״ג",
+      body: `לשונית רביעית בראש הדף, נפרדת לגמרי משלוש לשוניות טווחי השנים — היא לא מבוססת על נתוני המדינות שהוזנו ידנית, אלא על נתוני טיסות אמיתיים שמתעדכנים אוטומטית כל 15 דקות ממאגר "טיסות" הפתוח של רשות שדות התעופה. יש בה שני תתי-מסך:
+
+• **🗺️ סיכום שבועי לפי מדינה/עיר** (תת-המסך שנפתח כברירת מחדל) — מציג רק **נחיתות** (טיסות נכנסות לישראל) של 7 הימים האחרונים, לפי מדינת/עיר מוצא, כדי לעזור להבין מאיפה בפועל אפשר להביא תיירים. כולל: טבלת סיכום (עם לחיצה על שורה לפירוט חברות התעופה), Top מדינות/ערים בגרף, השוואה לשבוע הקודם, תג "🆕 חדש" למסלול שלא היה קיים שבוע קודם, ואפשרות מעבר בין רמת מדינה לרמת עיר. יש גם כפתור כתום "🎯 פערי הזדמנות מול countries" (כבוי כברירת מחדל) — לוחצים עליו כדי להשוות בין מה שמוגדר ידנית בטבלת המדינות (יש/אין טיסות ישירות) לבין מה שבאמת קורה בשטח באותו שבוע; מדינה שמוגדרת עם טיסות ישירות אך כמעט ואין לה נחיתות בפועל מסומנת ב"⚠️ נפח נמוך".
+• **📡 סטטוס כיום** — תמונת מצב חיה של ±24 שעות סביב הרגע הנוכחי, כולל גם נחיתות וגם המראות, עם אפשרות סינון לפי כיוון וחברת תעופה, וטבלת טיסות ממוינת לפי קרבה לזמן הנוכחי.
+
+בשני תתי-המסך יש גם כפתור "🖨️ ייצוא ל-PDF / הדפסה", בדיוק כמו בשאר מסכי הניתוח.`
+    },
+    {
       emoji: "💬",
       title: "עוזר הניווט הצף",
       body: `כפתור עגול ירוק בפינה השמאלית התחתונה של המסך, בכל מקום באתר. זה צ'אט קטן שעונה על שאלות לגבי **איך להשתמש באתר עצמו** — למשל "איפה משנים סיסמה" או "מה זה ציון כולל". הוא מתוכנת בכוונה לענות רק על שאלות הקשורות למערכת, ולסרב בנימוס לכל נושא אחר.`
@@ -1944,7 +1986,7 @@ ${csv}`;
     };
   }
   function WeeklyCountrySummary({ theme, countries, allMetrics }) {
-    const [direction, setDirection] = useState("arrival");
+    const direction = "arrival";
     const [level, setLevel] = useState("country");
     const [countryFilter, setCountryFilter] = useState("all");
     const [search, setSearch] = useState("");
@@ -2006,6 +2048,31 @@ ${csv}`;
           const gapFlag = hasDirectFlights && s.avgPerDay < 1 ? "underused" : null;
           return { ...s, hasDirectFlights, gapFlag };
         });
+        const presentNames = new Set(stats.map((s) => s.country));
+        const zeroFlightGaps = countries.filter((c) => {
+          if (presentNames.has(c.name_he)) return false;
+          if (q && !c.name_he.includes(q)) return false;
+          const latest = latestMetricForCountry(c.id, allMetrics);
+          return !!(latest && latest.has_direct_flights);
+        }).map((c) => ({
+          key: c.name_he,
+          name: c.name_he,
+          country: c.name_he,
+          count: 0,
+          prevCount: (prevMap.get(c.name_he) || { rows: [] }).rows.length,
+          trendPct: null,
+          isNewRoute: false,
+          airlineCount: 0,
+          airlineList: [],
+          topAirline: null,
+          uniqueCityCount: 0,
+          avgPerDay: 0,
+          peakWeekdayLabel: "-",
+          onTimeRate: null,
+          hasDirectFlights: true,
+          gapFlag: "zero"
+        }));
+        stats = [...stats, ...zeroFlightGaps];
       }
       const sorted = [...stats].sort((a, b) => {
         if (sortBy === "trend") {
@@ -2063,16 +2130,7 @@ ${csv}`;
       };
     }, [currentWeekRows, theme]);
     const visibleStats = showAll ? groupStats : groupStats.slice(0, 15);
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl border", style: { background: hexA(theme.solid, 0.06), borderColor: hexA(theme.solid, 0.25) } }, FLIGHT_DIRECTION_FILTERS.map((d) => /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        key: d.key,
-        onClick: () => setDirection(d.key),
-        className: `px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition ${direction === d.key ? `bg-gradient-to-l ${theme.grad} text-white shadow-md` : "hoverable"}`,
-        style: direction !== d.key ? { color: theme.solid } : {}
-      },
-      d.label
-    ))), /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl border", style: { background: hexA(theme.solid, 0.06), borderColor: hexA(theme.solid, 0.25) } }, [{ key: "country", label: "🗺️ לפי מדינה" }, { key: "city", label: "🏙️ לפי עיר" }].map((l) => /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3" }, /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary flex items-center gap-1.5" }, "🛬 הנתונים כאן כוללים נחיתות בלבד — מיועד לניתוח מקורות תיירות נכנסת"), /* @__PURE__ */ React.createElement(ExportBar, null)), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl border", style: { background: hexA(theme.solid, 0.06), borderColor: hexA(theme.solid, 0.25) } }, [{ key: "country", label: "🗺️ לפי מדינה" }, { key: "city", label: "🏙️ לפי עיר" }].map((l) => /* @__PURE__ */ React.createElement(
       "button",
       {
         key: l.key,
@@ -2107,9 +2165,9 @@ ${csv}`;
       "🎯 פערי הזדמנות מול countries"
     )), loading && !flights.length && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "🔄 טוען נתוני שבועיים..."), error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16 text-red-500" }, "⚠️ שגיאה: ", error), !error && !!flights.length && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📋", label: "סה״כ (7 ימים)", value: fmtNum(kpis.totalCurrent), sub: kpis.trendPct != null ? `מגמה: ${fmtTrendPct(kpis.trendPct)} מול שבוע קודם` : "אין נתוני שבוע קודם להשוואה", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🗺️", label: "מדינות מקור פעילות", value: fmtNum(kpis.activeCountries), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🏙️", label: "ערים מקור פעילות", value: fmtNum(kpis.activeCities), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✈️", label: "חברות תעופה פעילות", value: fmtNum(new Set(currentWeekRows.map((f) => f.airline_name || f.airline_code).filter(Boolean)).size), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🆕", label: "מסלולים חדשים/מתעוררים", value: fmtNum(kpis.emerging), sub: "חדש השבוע או צמיחה של 50%+", accentSolid: "#22c55e" }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✅", label: "אמינות (בזמן)", value: kpis.onTimeShare != null ? `${fmtDec(kpis.onTimeShare)}%` : "-", sub: "עיכוב מתחת ל-15 דק'", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "🏆 Top ", level === "country" ? "מדינות" : "ערים", " מקור — 7 ימים אחרונים"), topChart ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: topChart, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, background: "#22c55e", display: "inline-block", borderRadius: 2 } }), " ירוק = מסלול חדש (לא הופיע בשבוע הקודם)")) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים.")), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 השוואת שבוע נוכחי מול קודם (Top 8)"), trendChart ? /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: trendChart, options: { responsive: true, maintainAspectRatio: false } }) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים.")), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "✈️ Top חברות תעופה — 7 ימים אחרונים"), airlineChart ? /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: airlineChart, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים."))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-3 flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm" }, "📃 טבלת סיכום — ", level === "country" ? "מדינה" : "עיר", " (לחץ על שורה לפירוט חברות תעופה)"), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-muted" }, "מוצגות ", fmtNum(visibleStats.length), " מתוך ", fmtNum(groupStats.length))), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider", style: { maxHeight: 460, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-xs" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, level === "country" ? "מדינה" : "עיר"), level === "city" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "מדינה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "נחיתות השבוע"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "מגמה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "חברות"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "חברה דומיננטית"), level === "country" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "ערים"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "יום שיא"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "בזמן"), showGaps && level === "country" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "פער"))), /* @__PURE__ */ React.createElement("tbody", null, visibleStats.map((s) => {
       const isExpanded = expandedKey === s.key;
-      const rowsOut = [/* @__PURE__ */ React.createElement("tr", { key: s.key, className: "border-t divider cursor-pointer hoverable", onClick: () => setExpandedKey(isExpanded ? null : s.key) }, /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-primary font-medium" }, s.isNewRoute && "🆕 ", s.name), level === "city" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.country), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, fmtNum(s.count), /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " (", fmtDec(s.avgPerDay), "/יום)")), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5" }, s.isNewRoute ? /* @__PURE__ */ React.createElement("span", { className: "font-medium", style: { color: "#22c55e" } }, "🆕 חדש") : s.trendPct != null ? /* @__PURE__ */ React.createElement("span", { className: "font-medium", style: { color: s.trendPct >= 0 ? "#16a34a" : "#ef4444" } }, s.trendPct >= 0 ? "▲ " : "▼ ", fmtTrendPct(s.trendPct)) : /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "-")), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.airlineCount), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.topAirline ? `${s.topAirline.name} (${s.topAirline.sharePct}%)` : "-"), level === "country" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.uniqueCityCount), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.peakWeekdayLabel), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.onTimeRate != null ? `${fmtDec(s.onTimeRate)}%` : "-"), showGaps && level === "country" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5" }, s.gapFlag === "underused" ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-1.5 py-0.5 rounded font-medium", style: { background: hexA("#f59e0b", 0.15), color: "#b45309" }, title: "מוגדר עם טיסות ישירות ב-countries, אך נפח נמוך מטיסה ביום בפועל בשבוע האחרון" }, "⚠️ נפח נמוך") : s.hasDirectFlights === false ? /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "אין טיסות ישירות מוצהרות") : s.hasDirectFlights == null ? /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "-") : /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, "✓ תואם")))];
+      const rowsOut = [/* @__PURE__ */ React.createElement("tr", { key: s.key, className: "border-t divider cursor-pointer hoverable", onClick: () => setExpandedKey(isExpanded ? null : s.key) }, /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-primary font-medium" }, s.isNewRoute && "🆕 ", s.name), level === "city" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.country), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, fmtNum(s.count), /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " (", fmtDec(s.avgPerDay), "/יום)")), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5" }, s.isNewRoute ? /* @__PURE__ */ React.createElement("span", { className: "font-medium", style: { color: "#22c55e" } }, "🆕 חדש") : s.trendPct != null ? /* @__PURE__ */ React.createElement("span", { className: "font-medium", style: { color: s.trendPct >= 0 ? "#16a34a" : "#ef4444" } }, s.trendPct >= 0 ? "▲ " : "▼ ", fmtTrendPct(s.trendPct)) : /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "-")), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.airlineCount), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.topAirline ? `${s.topAirline.name} (${s.topAirline.sharePct}%)` : "-"), level === "country" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.uniqueCityCount), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.peakWeekdayLabel), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.onTimeRate != null ? `${fmtDec(s.onTimeRate)}%` : "-"), showGaps && level === "country" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5" }, s.gapFlag === "zero" ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-1.5 py-0.5 rounded font-medium", style: { background: hexA("#ef4444", 0.15), color: "#ef4444" }, title: "מוגדר עם טיסות ישירות ב-countries, אך אין ולו נחיתה אחת בשבוע האחרון" }, "🚫 אין נחיתות השבוע") : s.gapFlag === "underused" ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-1.5 py-0.5 rounded font-medium", style: { background: hexA("#f59e0b", 0.15), color: "#b45309" }, title: "מוגדר עם טיסות ישירות ב-countries, אך נפח נמוך מטיסה ביום בפועל בשבוע האחרון" }, "⚠️ נפח נמוך") : s.hasDirectFlights === false ? /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "אין טיסות ישירות מוצהרות") : s.hasDirectFlights == null ? /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "-") : /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, "✓ תואם")))];
       if (isExpanded) {
-        rowsOut.push(/* @__PURE__ */ React.createElement("tr", { key: `${s.key}-detail` }, /* @__PURE__ */ React.createElement("td", { colSpan: 9, className: "px-3 py-3 border-t divider", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-secondary mb-2" }, "פילוח חברות תעופה עבור ", s.name, ":"), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2" }, s.airlineList.map(([name, count]) => /* @__PURE__ */ React.createElement("span", { key: name, className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.1), color: theme.solid } }, name, " — ", count, " (", Math.round(count / s.count * 100), "%)"))))));
+        rowsOut.push(/* @__PURE__ */ React.createElement("tr", { key: `${s.key}-detail` }, /* @__PURE__ */ React.createElement("td", { colSpan: 9, className: "px-3 py-3 border-t divider", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("p", { className: "text-xs font-semibold text-secondary mb-2" }, "פילוח חברות תעופה עבור ", s.name, ":"), s.airlineList.length ? /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2" }, s.airlineList.map(([name, count]) => /* @__PURE__ */ React.createElement("span", { key: name, className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.1), color: theme.solid } }, name, " — ", count, " (", Math.round(count / s.count * 100), "%)"))) : /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "אין נתוני טיסות עבור ", s.name, " בשבוע האחרון."))));
       }
       return rowsOut;
     }))))), !showAll && groupStats.length > 15 && /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAll(true), className: "text-xs px-4 py-2 rounded-lg border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "הצג את כל ", groupStats.length, " התוצאות ▼")), showAll && groupStats.length > 15 && /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAll(false), className: "text-xs px-4 py-2 rounded-lg border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "הצג פחות ▲"))), /* @__PURE__ */ React.createElement(OpenQuestionAI, { key: `ask-weekly-${direction}-${level}`, theme, subject: "סיכום שבועי של כניסות תיירים לפי מדינה/עיר", data: { direction, level, kpis, topGroups: groupStats.slice(0, 8).map((s) => ({ name: s.name, count: s.count, trendPct: s.trendPct, isNewRoute: s.isNewRoute, topAirline: s.topAirline })) }, placeholder: "לדוגמה: מאיפה כדאי להגביר שיווק על סמך הנתונים האלו?" }));
@@ -2119,7 +2177,7 @@ ${csv}`;
     { key: "weekly", label: "🗺️ סיכום שבועי לפי מדינה/עיר" }
   ];
   function FlightsMainTab({ theme, countries, allMetrics }) {
-    const [sub, setSub] = useState("today");
+    const [sub, setSub] = useState("weekly");
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl border w-fit mb-6 flex-wrap", style: { background: hexA(theme.solid, 0.06), borderColor: hexA(theme.solid, 0.25) } }, FLIGHTS_SUB_MODULES.map((m) => /* @__PURE__ */ React.createElement(
       "button",
       {
