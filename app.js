@@ -21,25 +21,22 @@
   const { useState, useEffect, useMemo, useRef, useCallback } = React;
   const printChartRegistry = /* @__PURE__ */ new Set();
   function resizeAllChartsForPrint() {
+  requestAnimationFrame(() => {
     printChartRegistry.forEach((c) => {
-      try {
-        c.resize();
-      } catch (e) {
-      }
+      try { c.resize(); } catch (e) {}
     });
+  });
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeprint", resizeAllChartsForPrint);
+  window.addEventListener("afterprint", resizeAllChartsForPrint); // ← זה היה חסר
+  if (window.matchMedia) {
+    const mql = window.matchMedia("print");
+    const handler = () => resizeAllChartsForPrint(); // תפעיל גם ביציאה מ-print, לא רק בכניסה
+    if (mql.addEventListener) mql.addEventListener("change", handler);
+    else if (mql.addListener) mql.addListener(handler);
   }
-  if (typeof window !== "undefined") {
-    window.addEventListener("beforeprint", resizeAllChartsForPrint);
-    if (window.matchMedia) {
-      const mql = window.matchMedia("print");
-      if (mql.addEventListener) mql.addEventListener("change", (e) => {
-        if (e.matches) resizeAllChartsForPrint();
-      });
-      else if (mql.addListener) mql.addListener((e) => {
-        if (e.matches) resizeAllChartsForPrint();
-      });
-    }
-  }
+}
   const sb = window.supabase.createClient(
     window.APP_CONFIG.SUPABASE_URL,
     window.APP_CONFIG.SUPABASE_ANON_KEY
@@ -1614,10 +1611,18 @@
     }
   ];
   function UserGuideModal({ onClose }) {
+    function renderInlineBold(text) {
+      return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+        part.startsWith("**") && part.endsWith("**")
+          ? React.createElement("strong", { key: i, className: "font-semibold text-primary" }, part.slice(2, -2))
+          : part
+      );
+    }
+    
     const [openIdx, setOpenIdx] = useState(0);
     return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[75] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between sticky top-0 card z-10" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "📖 מדריך למשתמש"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "✕")), /* @__PURE__ */ React.createElement("div", { className: "p-5" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary mb-4" }, "מדריך זה מסביר כל חלק במערכת בשפה פשוטה, בלי צורך ברקע בקוד או בסטטיסטיקה. לחצו על כל יחידה כדי להרחיב אותה."), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, GUIDE_UNITS.map((unit, i) => {
       const isOpen = openIdx === i;
-      return /* @__PURE__ */ React.createElement("div", { key: i, className: "border rounded-xl divider overflow-hidden" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setOpenIdx(isOpen ? -1 : i), className: "w-full flex items-center justify-between gap-3 px-4 py-3 hoverable text-right" }, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, unit.emoji, " ", unit.title), /* @__PURE__ */ React.createElement("span", { className: "text-secondary text-xs shrink-0" }, isOpen ? "▲" : "▼")), isOpen && /* @__PURE__ */ React.createElement("div", { className: "px-4 pb-4", style: { animation: "fadeIn 0.2s ease-in" } }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary leading-relaxed whitespace-pre-line" }, unit.body)));
+      return /* @__PURE__ */ React.createElement("div", { key: i, className: "border rounded-xl divider overflow-hidden" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setOpenIdx(isOpen ? -1 : i), className: "w-full flex items-center justify-between gap-3 px-4 py-3 hoverable text-right" }, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary text-sm flex items-center gap-2" }, unit.emoji, " ", unit.title), /* @__PURE__ */ React.createElement("span", { className: "text-secondary text-xs shrink-0" }, isOpen ? "▲" : "▼")), isOpen && /* @__PURE__ */ React.createElement("div", { className: "px-4 pb-4", style: { animation: "fadeIn 0.2s ease-in" } }, /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary leading-relaxed whitespace-pre-line" }, renderInlineBold(unit.body))));
     })))));
   }
   function RegressionMethodologyModal({ onClose }) {
@@ -2173,9 +2178,9 @@ ${csv}`;
     }))))), !showAll && groupStats.length > 15 && /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAll(true), className: "text-xs px-4 py-2 rounded-lg border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "הצג את כל ", groupStats.length, " התוצאות ▼")), showAll && groupStats.length > 15 && /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAll(false), className: "text-xs px-4 py-2 rounded-lg border text-secondary hoverable", style: { borderColor: "var(--card-border)" } }, "הצג פחות ▲"))), /* @__PURE__ */ React.createElement(OpenQuestionAI, { key: `ask-weekly-${direction}-${level}`, theme, subject: "סיכום שבועי של כניסות תיירים לפי מדינה/עיר", data: { direction, level, kpis, topGroups: groupStats.slice(0, 8).map((s) => ({ name: s.name, count: s.count, trendPct: s.trendPct, isNewRoute: s.isNewRoute, topAirline: s.topAirline })) }, placeholder: "לדוגמה: מאיפה כדאי להגביר שיווק על סמך הנתונים האלו?" }));
   }
   const FLIGHTS_SUB_MODULES = [
-    { key: "today", label: "📡 סטטוס כיום" },
-    { key: "weekly", label: "🗺️ סיכום שבועי לפי מדינה/עיר" }
-  ];
+  { key: "weekly", label: "🗺️ סיכום שבועי לפי מדינה/עיר" },
+  { key: "today", label: "📡 סטטוס כיום" }
+];
   function FlightsMainTab({ theme, countries, allMetrics }) {
     const [sub, setSub] = useState("weekly");
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl border w-fit mb-6 flex-wrap", style: { background: hexA(theme.solid, 0.06), borderColor: hexA(theme.solid, 0.25) } }, FLIGHTS_SUB_MODULES.map((m) => /* @__PURE__ */ React.createElement(
