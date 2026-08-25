@@ -1436,6 +1436,10 @@ if (typeof window !== "undefined") {
           online_search_index: m.online_search_index !== "" ? m.online_search_index : row.online_search_index,
           travel_advisory: m.travel_advisory || row.travel_advisory,
           entries_to_israel_thousands: m.entries_to_israel_thousands !== "" ? m.entries_to_israel_thousands : row.entries_to_israel_thousands,
+          gdp_per_capita: m.gdp_per_capita !== "" ? m.gdp_per_capita : row.gdp_per_capita,
+          average_expenditure_per_trip: m.average_expenditure_per_trip !== "" ? m.average_expenditure_per_trip : row.average_expenditure_per_trip,
+          number_of_passengers_per_year: m.number_of_passengers_per_year !== "" ? m.number_of_passengers_per_year : row.number_of_passengers_per_year,
+          evangelical_population: m.evangelical_population !== "" ? m.evangelical_population : row.evangelical_population,
           _aiFilled: true
         }));
         setMissingWarning([]);
