@@ -790,14 +790,22 @@ if (typeof window !== "undefined") {
       }
       setState({ loading: true, metrics: null, estimated: false, country: null });
       DataAPI.estimateViaAI(nameHe, nameHe, years).then((result) => {
-        const rows = result.rows.map((r) => __spreadValues({}, r));
-        setState({
-          loading: false,
-          metrics: deriveMetrics(rows, years),
-          estimated: true,
-          country: { id: null, name_he: nameHe, flag: "🌐", region: null, has_office: false }
-        });
-      }).catch((err) => {
+  const rows = result.rows.map((r) => __spreadValues({}, r));
+  const canonical = lookupCanonicalCountry(nameHe, nameHe);
+  setState({
+    loading: false,
+    metrics: deriveMetrics(rows, years),
+    estimated: true,
+    country: {
+      id: null,
+      name_he: nameHe,
+      flag: (canonical == null ? void 0 : canonical.flag) || "🌐",
+      region: null,
+      has_office: false,
+      Distance: (canonical == null ? void 0 : canonical.distance_km) != null ? canonical.distance_km : result.distance_km
+    }
+  });
+}).catch((err) => {
         console.error(err);
         setState({ loading: false, metrics: null, estimated: false, country: null, error: String(err) });
       });
