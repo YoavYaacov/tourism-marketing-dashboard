@@ -189,6 +189,44 @@ if (typeof window !== "undefined") {
       isAiEstimated
     };
   }
+  // Single-year snapshot — same field names as deriveMetrics so KPI cards
+  // can consume either interchangeably. growthTrend/totalScore need a
+  // multi-year range to mean anything, so they're explicitly null here;
+  // callers hide those specific cards when they see null (agreed design).
+  function deriveYearMetrics(rows, year) {
+    const r = rows.find((x) => x.year === year);
+    if (!r) return null;
+    const sumVisitors = (r.entries_to_israel_thousands || 0) * 1e3;
+    const sumOutbound = r.outbound_tourism_millions || 0;
+    const sentiment = Math.round((r.online_search_index || 0) * 0.6 + (r.travel_advisory === 1 ? 100 : 50) * 0.4);
+    const religiousAffinity = Math.round(
+      Math.max(0, Math.min(100, (Math.log1p(r.jewish_population || 0) - LOG_MIN) / (LOG_MAX - LOG_MIN || 1) * 100))
+    );
+    const roi = sumOutbound > 0 ? +(sumVisitors / 1e6 / sumOutbound * 100).toFixed(2) : 0;
+    const roiScore = Math.round(Math.min(100, Math.max(0, roi * 20)));
+    return {
+      year,
+      sumVisitors,
+      sumOutbound,
+      avgHdi: r.hdi,
+      avgAirQuality: r.air_transport_quality,
+      avgJewishPop: r.jewish_population,
+      avgGdpPerCapita: r.gdp_per_capita,
+      avgExpenditurePerTrip: r.average_expenditure_per_trip,
+      avgPassengersPerYear: r.number_of_passengers_per_year,
+      avgEvangelicalPop: r.evangelical_population,
+      advisoryYears: r.travel_advisory === 2 ? 1 : 0,
+      hasDirectFlights: !!r.has_direct_flights,
+      hasOffice: !!r.has_office,
+      sentiment,
+      religiousAffinity,
+      roi,
+      roiScore,
+      growthTrend: null,
+      totalScore: null,
+      isAiEstimated: !!r.is_ai_estimated
+    };
+  }
   const REGRESSION_FIELDS = [
     { key: "hdi", label: "מדד פיתוח אנושי (HDI)", get: (r) => r.hdi },
     { key: "outbound_tourism_millions", label: "נפח תיירות יוצאת", get: (r) => r.outbound_tourism_millions },
@@ -711,22 +749,23 @@ if (typeof window !== "undefined") {
     return /* @__PURE__ */ React.createElement("div", { className: "flex flex-col items-center justify-center py-20 gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "text-4xl animate-spin" }, "🔄"), /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement("p", { className: "font-semibold text-primary" }, '🔍 "', name, '" לא נמצאה במאגר הנתונים'), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-secondary mt-1" }, "🤖 שולח בקשה ל-Gemini להשלמת נתונים משוערים...")));
   }
   function useResolvedCountry(nameHe, countries, allMetrics, years) {
-    const [state, setState] = useState({ loading: false, metrics: null, estimated: false, country: null });
+    const [state, setState] = useState({ loading: false, metrics: null, rows: null, estimated: false, country: null });
     useEffect(() => {
       if (!nameHe || !countries.length) return;
       const country = countries.find((c) => c.name_he === nameHe);
       if (country) {
         const rows = allMetrics.filter((m) => m.country_id === country.id);
-        setState({ loading: false, metrics: deriveMetrics(rows, years), estimated: false, country });
+        setState({ loading: false, metrics: deriveMetrics(rows, years), rows, estimated: false, country });
         return;
       }
-      setState({ loading: true, metrics: null, estimated: false, country: null });
+      setState({ loading: true, metrics: null, rows: null, estimated: false, country: null });
       DataAPI.estimateViaAI(nameHe, nameHe, years).then((result) => {
   const rows = result.rows.map((r) => __spreadValues({}, r));
   const canonical = lookupCanonicalCountry(nameHe, nameHe);
   setState({
     loading: false,
     metrics: deriveMetrics(rows, years),
+    rows,
     estimated: true,
     country: {
       id: null,
@@ -739,7 +778,7 @@ if (typeof window !== "undefined") {
   });
 }).catch((err) => {
         console.error(err);
-        setState({ loading: false, metrics: null, estimated: false, country: null, error: String(err) });
+        setState({ loading: false, metrics: null, rows: null, estimated: false, country: null, error: String(err) });
       });
     }, [nameHe, countries, allMetrics, years]);
     return state;
@@ -789,10 +828,20 @@ if (typeof window !== "undefined") {
   function SingleCountryDive({ years, theme, countries, allMetrics }) {
     var _a;
     const [countryName, setCountryName] = useState(((_a = countries[0]) == null ? void 0 : _a.name_he) || "");
+    const [selectedYear, setSelectedYear] = useState("");
     useEffect(() => {
       if (!countryName && countries[0]) setCountryName(countries[0].name_he);
     }, [countries]);
-    const { loading, metrics, estimated, country, error } = useResolvedCountry(countryName, countries, allMetrics, years);
+    useEffect(() => {
+      setSelectedYear("");
+    }, [countryName, years]);
+    const { loading, metrics, rows, estimated, country, error } = useResolvedCountry(countryName, countries, allMetrics, years);
+    const yearMetrics = useMemo(() => {
+      if (!selectedYear || !rows) return null;
+      return deriveYearMetrics(rows, Number(selectedYear));
+    }, [selectedYear, rows]);
+    const displayMetrics = yearMetrics || metrics;
+    const isSingleYear = !!yearMetrics;
     const lineData = useMemo(() => {
       if (!metrics) return null;
       return {
@@ -803,23 +852,31 @@ if (typeof window !== "undefined") {
           borderColor: theme.solid,
           backgroundColor: hexA(theme.solid, 0.2),
           fill: true,
-          tension: 0.3
+          tension: 0.3,
+          pointRadius: years.map((y) => String(y) === selectedYear ? 6 : 3),
+          pointBackgroundColor: years.map((y) => String(y) === selectedYear ? theme.solid : hexA(theme.solid, 0.5)),
+          pointBorderColor: years.map((y) => String(y) === selectedYear ? "#fff" : theme.solid),
+          pointBorderWidth: years.map((y) => String(y) === selectedYear ? 2 : 1)
         }]
       };
-    }, [metrics, years, theme]);
+    }, [metrics, years, theme, selectedYear]);
     const barData = useMemo(() => {
-      if (!metrics) return null;
+      if (!displayMetrics) return null;
+      const labels = ["❤️ אהדה", "🕎 זיקה דתית"];
+      const data = [displayMetrics.sentiment, displayMetrics.religiousAffinity];
+      if (displayMetrics.growthTrend != null) { labels.push("📈 צמיחה"); data.push(displayMetrics.growthTrend); }
+      if (displayMetrics.totalScore != null) { labels.push("🏆 ציון כולל"); data.push(displayMetrics.totalScore); }
       return {
-        labels: ["❤️ אהדה", "🕎 זיקה דתית", "📈 צמיחה", "🏆 ציון כולל"],
+        labels,
         datasets: [{
           label: (country == null ? void 0 : country.name_he) || "",
-          data: [metrics.sentiment, metrics.religiousAffinity, metrics.growthTrend, metrics.totalScore],
+          data,
           backgroundColor: theme.solid,
           borderRadius: 6
         }]
       };
-    }, [metrics, theme, country]);
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-md" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "🌍 בחר מדינה לניתוח מעמיק", value: countryName, onChange: setCountryName, countries })), loading && /* @__PURE__ */ React.createElement(AiLoadingState, { name: countryName }), !loading && error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, '⚠️ נכשלה השלמת הנתונים עבור "', countryName, '"'), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, error)), !loading && metrics && country && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, null), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-bold text-primary flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, country.flag || "🌐"), " ", country.name_he, metrics.hasOffice && /* @__PURE__ */ React.createElement("span", { title: "לשכה פעילה", className: "text-lg" }, "⭐")), country.region ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.12), color: theme.solid } }, country.region) : null, estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🛂", label: "סה״כ נכנסים לישראל", value: fmtCompact(metrics.sumVisitors), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✈️", label: "נפח תיירות יוצאת מצטבר", value: `${fmtNum(metrics.sumOutbound)}M`, accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "❤️", label: "אהדה פרו-ישראלית", value: `${metrics.sentiment}/100`, tip: "ציון מחושב (לא סקר דעת קהל אמיתי): 60% ממדד חיפוש מקוון (online_search_index) + 40% ממצב אזהרת המסע (תקין=100, אזהרה=50), בממוצע על פני טווח השנים הנבחר.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "💹", label: "רווחיות (יעילות המרה)", value: `${metrics.roi}%`, tip: "אחוז מסך התיירות היוצאת של המדינה שהומר לכניסות בפועל לישראל.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 מגמת כניסות לישראל"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📊 פרופיל מדדים"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 100 } } } }))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🕎", label: "זיקה דתית", value: `${metrics.religiousAffinity}/100`, sub: `אוכ' יהודית: ${fmtCompact(metrics.avgJewishPop)}`, tip: "מנורמל על סולם לוגריתמי מול כל המדינות במאגר.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📊", label: "מדד HDI ממוצע", value: fmtDec(metrics.avgHdi), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🛫", label: "איכות תעופה (TTDI)", value: fmtDec(metrics.avgAirQuality), sub: metrics.hasDirectFlights ? "✅ טיסות ישירות" : "❌ אין טיסות ישירות", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🏆", label: "ציון כולל", value: `${metrics.totalScore}/100`, sub: metrics.advisoryYears > 0 ? `⚠️ ${metrics.advisoryYears} שנות אזהרה` : "✅ ללא אזהרות", tip: "ממוצע משוקלל: 35% אהדה, 25% זיקה דתית, 25% רווחיות, 15% מגמת צמיחה.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "💵", label: "תוצר לנפש", value: metrics.avgGdpPerCapita ? `$${fmtNum(metrics.avgGdpPerCapita)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🧳", label: "הוצאה ממוצעת לנסיעה", value: metrics.avgExpenditurePerTrip ? `$${fmtNum(metrics.avgExpenditurePerTrip)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✝️", label: "אוכלוסייה אוונגליסטית", value: fmtCompact(metrics.avgEvangelicalPop), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📍", label: "מרחק מישראל", value: country.Distance ? `${fmtNum(country.Distance)} ק"מ` : "-", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement(CouncilAnalysis, { key: country.name_he, country, metrics, theme }), metrics.hasOffice && /* @__PURE__ */ React.createElement(OfficeContributionAnalysis, { key: `office-${country.name_he}`, country, metrics, countries, allMetrics, years, theme }), /* @__PURE__ */ React.createElement(CompetitorAnalysis, { key: `comp-${country.name_he}`, country, theme }), /* @__PURE__ */ React.createElement(OpenQuestionAI, { key: `ask-${country.name_he}`, theme, subject: country.name_he, data: { sumVisitors: metrics.sumVisitors, sumOutbound: metrics.sumOutbound, sentiment: metrics.sentiment, religiousAffinity: metrics.religiousAffinity, roi: metrics.roi, growthTrend: metrics.growthTrend, totalScore: metrics.totalScore, avgHdi: metrics.avgHdi, avgGdpPerCapita: metrics.avgGdpPerCapita } })));
+    }, [displayMetrics, theme, country]);
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-3 flex-wrap items-end" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-md flex-1", style: { minWidth: 220 } }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "🌍 בחר מדינה לניתוח מעמיק", value: countryName, onChange: setCountryName, countries })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1.5" }, "📅 שנה"), /* @__PURE__ */ React.createElement("select", { value: selectedYear, onChange: (e) => setSelectedYear(e.target.value), className: "input-field border rounded-xl px-3 py-2.5 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "כל השנים"), years.map((y) => /* @__PURE__ */ React.createElement("option", { key: y, value: String(y) }, y))))), loading && /* @__PURE__ */ React.createElement(AiLoadingState, { name: countryName }), !loading && error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, '⚠️ נכשלה השלמת הנתונים עבור "', countryName, '"'), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, error)), !loading && displayMetrics && country && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, null), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-bold text-primary flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, country.flag || "🌐"), " ", country.name_he, metrics.hasOffice && /* @__PURE__ */ React.createElement("span", { title: "לשכה פעילה", className: "text-lg" }, "⭐")), country.region ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA(theme.solid, 0.12), color: theme.solid } }, country.region) : null, estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null), isSingleYear && /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA("#f59e0b", 0.15), color: "#b45309" } }, "📅 תצוגת שנת ", selectedYear, " בלבד")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🛂", label: isSingleYear ? "כניסות לישראל" : "סה״כ נכנסים לישראל", value: fmtCompact(displayMetrics.sumVisitors), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✈️", label: isSingleYear ? "נפח תיירות יוצאת" : "נפח תיירות יוצאת מצטבר", value: `${fmtNum(displayMetrics.sumOutbound)}M`, accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "❤️", label: "אהדה פרו-ישראלית", value: `${displayMetrics.sentiment}/100`, tip: "ציון מחושב (לא סקר דעת קהל אמיתי): 60% ממדד חיפוש מקוון (online_search_index) + 40% ממצב אזהרת המסע (תקין=100, אזהרה=50)" + (isSingleYear ? ", עבור השנה שנבחרה." : ", בממוצע על פני טווח השנים הנבחר."), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "💹", label: "רווחיות (יעילות המרה)", value: `${displayMetrics.roi}%`, tip: "אחוז מסך התיירות היוצאת של המדינה שהומר לכניסות בפועל לישראל.", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 מגמת כניסות לישראל", isSingleYear && /* @__PURE__ */ React.createElement("span", { className: "text-xs text-muted font-normal" }, " · השנה שנבחרה מודגשת בגרף")), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📊 פרופיל מדדים"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 100 } } } }))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🕎", label: "זיקה דתית", value: `${displayMetrics.religiousAffinity}/100`, sub: `אוכ' יהודית: ${fmtCompact(displayMetrics.avgJewishPop)}`, tip: "מנורמל על סולם לוגריתמי מול כל המדינות במאגר.", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📊", label: isSingleYear ? "מדד HDI" : "מדד HDI ממוצע", value: fmtDec(displayMetrics.avgHdi), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🛫", label: "איכות תעופה (TTDI)", value: fmtDec(displayMetrics.avgAirQuality), sub: displayMetrics.hasDirectFlights ? "✅ טיסות ישירות" : "❌ אין טיסות ישירות", accentSolid: theme.solid }), displayMetrics.totalScore != null ? /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🏆", label: "ציון כולל", value: `${displayMetrics.totalScore}/100`, sub: displayMetrics.advisoryYears > 0 ? `⚠️ ${displayMetrics.advisoryYears} שנות אזהרה` : "✅ ללא אזהרות", tip: "ממוצע משוקלל: 35% אהדה, 25% זיקה דתית, 25% רווחיות, 15% מגמת צמיחה.", accentSolid: theme.solid }) : /* @__PURE__ */ React.createElement(KpiCard, { emoji: "⚠️", label: "אזהרת מסע", value: displayMetrics.advisoryYears > 0 ? "כן" : "לא", sub: "לשנה זו בלבד", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "💵", label: "תוצר לנפש", value: displayMetrics.avgGdpPerCapita ? `$${fmtNum(displayMetrics.avgGdpPerCapita)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🧳", label: isSingleYear ? "הוצאה לנסיעה" : "הוצאה ממוצעת לנסיעה", value: displayMetrics.avgExpenditurePerTrip ? `$${fmtNum(displayMetrics.avgExpenditurePerTrip)}` : "-", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✝️", label: "אוכלוסייה אוונגליסטית", value: fmtCompact(displayMetrics.avgEvangelicalPop), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📍", label: "מרחק מישראל", value: country.Distance ? `${fmtNum(country.Distance)} ק"מ` : "-", accentSolid: theme.solid })), /* @__PURE__ */ React.createElement(CouncilAnalysis, { key: `${country.name_he}-${selectedYear}`, country, metrics: displayMetrics, theme }), metrics.hasOffice && /* @__PURE__ */ React.createElement(OfficeContributionAnalysis, { key: `office-${country.name_he}`, country, metrics, countries, allMetrics, years, theme }), /* @__PURE__ */ React.createElement(CompetitorAnalysis, { key: `comp-${country.name_he}`, country, theme }), /* @__PURE__ */ React.createElement(OpenQuestionAI, { key: `ask-${country.name_he}-${selectedYear}`, theme, subject: isSingleYear ? `${country.name_he} (${selectedYear})` : country.name_he, data: { year: isSingleYear ? Number(selectedYear) : "כל הטווח", sumVisitors: displayMetrics.sumVisitors, sumOutbound: displayMetrics.sumOutbound, sentiment: displayMetrics.sentiment, religiousAffinity: displayMetrics.religiousAffinity, roi: displayMetrics.roi, growthTrend: displayMetrics.growthTrend, totalScore: displayMetrics.totalScore, avgHdi: displayMetrics.avgHdi, avgGdpPerCapita: displayMetrics.avgGdpPerCapita } })));
   }
   const COUNCIL_SECTIONS = [
     { key: "executive_summary", label: "תקציר מנהלים", emoji: "📋" },
@@ -859,12 +916,31 @@ if (typeof window !== "undefined") {
     var _a, _b, _c, _d;
     const [c1, setC1] = useState(((_a = countries[0]) == null ? void 0 : _a.name_he) || "");
     const [c2, setC2] = useState(((_b = countries[1]) == null ? void 0 : _b.name_he) || "");
+    const [selectedYear, setSelectedYear] = useState("");
     useEffect(() => {
       if (!c1 && countries[0]) setC1(countries[0].name_he);
       if (!c2 && countries[1]) setC2(countries[1].name_he);
     }, [countries]);
+    useEffect(() => {
+      setSelectedYear("");
+    }, [c1, c2, years]);
     const r1 = useResolvedCountry(c1, countries, allMetrics, years);
     const r2 = useResolvedCountry(c2, countries, allMetrics, years);
+    const yearMetrics1 = useMemo(() => {
+      if (!selectedYear || !r1.rows) return null;
+      return deriveYearMetrics(r1.rows, Number(selectedYear));
+    }, [selectedYear, r1.rows]);
+    const yearMetrics2 = useMemo(() => {
+      if (!selectedYear || !r2.rows) return null;
+      return deriveYearMetrics(r2.rows, Number(selectedYear));
+    }, [selectedYear, r2.rows]);
+    const dm1 = yearMetrics1 || r1.metrics;
+    const dm2 = yearMetrics2 || r2.metrics;
+    const isSingleYear = !!(yearMetrics1 || yearMetrics2);
+    const activeMetricDefs = useMemo(
+      () => COMPARE_METRIC_DEFS.filter((m) => dm1 && dm2 && dm1[m.key] != null && dm2[m.key] != null),
+      [dm1, dm2]
+    );
     const [conclusion, setConclusion] = useState(null);
     const [conclusionLoading, setConclusionLoading] = useState(false);
     const [conclusionError, setConclusionError] = useState(null);
@@ -880,35 +956,35 @@ if (typeof window !== "undefined") {
       return {
         labels: years,
         datasets: [
-          { label: c1, data: years.map((y) => Math.round(r1.metrics.visitorsByYear[y] || 0)), borderColor: theme.solid, backgroundColor: hexA(theme.solid, 0.15), tension: 0.3 },
-          { label: c2, data: years.map((y) => Math.round(r2.metrics.visitorsByYear[y] || 0)), borderColor: "#94a3b8", backgroundColor: "#94a3b822", tension: 0.3 }
+          { label: c1, data: years.map((y) => Math.round(r1.metrics.visitorsByYear[y] || 0)), borderColor: theme.solid, backgroundColor: hexA(theme.solid, 0.15), tension: 0.3, pointRadius: years.map((y) => String(y) === selectedYear ? 6 : 3), pointBackgroundColor: years.map((y) => String(y) === selectedYear ? theme.solid : hexA(theme.solid, 0.5)) },
+          { label: c2, data: years.map((y) => Math.round(r2.metrics.visitorsByYear[y] || 0)), borderColor: "#94a3b8", backgroundColor: "#94a3b822", tension: 0.3, pointRadius: years.map((y) => String(y) === selectedYear ? 6 : 3), pointBackgroundColor: years.map((y) => String(y) === selectedYear ? "#94a3b8" : "#94a3b899") }
         ]
       };
-    }, [r1.metrics, r2.metrics, years, c1, c2, theme]);
+    }, [r1.metrics, r2.metrics, years, c1, c2, theme, selectedYear]);
     const barData = useMemo(() => {
-      if (!r1.metrics || !r2.metrics) return null;
+      if (!dm1 || !dm2 || !activeMetricDefs.length) return null;
       return {
-        labels: COMPARE_METRIC_DEFS.map((m) => m.label),
+        labels: activeMetricDefs.map((m) => m.label),
         datasets: [
-          { label: c1, data: COMPARE_METRIC_DEFS.map((m) => r1.metrics[m.key]), backgroundColor: theme.solid },
-          { label: c2, data: COMPARE_METRIC_DEFS.map((m) => r2.metrics[m.key]), backgroundColor: "#94a3b8" }
+          { label: c1, data: activeMetricDefs.map((m) => dm1[m.key]), backgroundColor: theme.solid },
+          { label: c2, data: activeMetricDefs.map((m) => dm2[m.key]), backgroundColor: "#94a3b8" }
         ]
       };
-    }, [r1.metrics, r2.metrics, c1, c2, theme]);
+    }, [dm1, dm2, activeMetricDefs, c1, c2, theme]);
     const roiChartData = useMemo(() => {
-      if (!r1.metrics || !r2.metrics) return null;
+      if (!dm1 || !dm2) return null;
       return {
         labels: [c1, c2],
-        datasets: [{ data: [r1.metrics.roi, r2.metrics.roi], backgroundColor: [theme.solid, "#94a3b8"], borderRadius: 6 }]
+        datasets: [{ data: [dm1.roi, dm2.roi], backgroundColor: [theme.solid, "#94a3b8"], borderRadius: 6 }]
       };
-    }, [r1.metrics, r2.metrics, c1, c2, theme]);
+    }, [dm1, dm2, c1, c2, theme]);
     const gap = useMemo(() => {
-      if (!r1.metrics || !r2.metrics) return null;
-      const leader = r1.metrics.totalScore >= r2.metrics.totalScore ? { name: c1, m: r1.metrics } : { name: c2, m: r2.metrics };
-      const trailer = leader.name === c1 ? { name: c2, m: r2.metrics } : { name: c1, m: r1.metrics };
-      const scoreDiff = Math.round(Math.abs(r1.metrics.totalScore - r2.metrics.totalScore));
+      if (!dm1 || !dm2 || dm1.totalScore == null || dm2.totalScore == null) return null;
+      const leader = dm1.totalScore >= dm2.totalScore ? { name: c1, m: dm1 } : { name: c2, m: dm2 };
+      const trailer = leader.name === c1 ? { name: c2, m: dm2 } : { name: c1, m: dm1 };
+      const scoreDiff = Math.round(Math.abs(dm1.totalScore - dm2.totalScore));
       let topDriver = null, topDriverDiff = -1;
-      COMPARE_METRIC_DEFS.forEach((m) => {
+      activeMetricDefs.forEach((m) => {
         const advantage = leader.m[m.key] - trailer.m[m.key];
         if (advantage <= 0) return;
         const weighted = advantage * m.weight;
@@ -919,7 +995,7 @@ if (typeof window !== "undefined") {
       });
       if (!topDriver) {
         let bestAbs = -1;
-        COMPARE_METRIC_DEFS.forEach((m) => {
+        activeMetricDefs.forEach((m) => {
           const weightedAbs = Math.abs(leader.m[m.key] - trailer.m[m.key]) * m.weight;
           if (weightedAbs > bestAbs) {
             bestAbs = weightedAbs;
@@ -929,7 +1005,7 @@ if (typeof window !== "undefined") {
       }
       const offsetByOthers = topDriver ? Math.round(topDriverDiff) > scoreDiff + 1 : false;
       return { leader, trailer, scoreDiff, topDriver, offsetByOthers };
-    }, [r1.metrics, r2.metrics, c1, c2]);
+    }, [dm1, dm2, c1, c2, activeMetricDefs]);
     const runConclusion = async () => {
       setConclusionLoading(true);
       setConclusionError(null);
@@ -937,8 +1013,9 @@ if (typeof window !== "undefined") {
         const res = await DataAPI.generateInsight("comparative_analysis", {
           c1,
           c2,
-          m1: { sentiment: r1.metrics.sentiment, religiousAffinity: r1.metrics.religiousAffinity, roi: r1.metrics.roi, growthTrend: r1.metrics.growthTrend, totalScore: r1.metrics.totalScore },
-          m2: { sentiment: r2.metrics.sentiment, religiousAffinity: r2.metrics.religiousAffinity, roi: r2.metrics.roi, growthTrend: r2.metrics.growthTrend, totalScore: r2.metrics.totalScore }
+          year: isSingleYear ? Number(selectedYear) : "כל הטווח",
+          m1: { sentiment: dm1.sentiment, religiousAffinity: dm1.religiousAffinity, roi: dm1.roi, growthTrend: dm1.growthTrend, totalScore: dm1.totalScore },
+          m2: { sentiment: dm2.sentiment, religiousAffinity: dm2.religiousAffinity, roi: dm2.roi, growthTrend: dm2.growthTrend, totalScore: dm2.totalScore }
         });
         setConclusion(sanitizeAiText(res.text));
       } catch (err) {
@@ -946,24 +1023,27 @@ if (typeof window !== "undefined") {
       }
       setConclusionLoading(false);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-4 max-w-2xl" }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "🇦 מדינה א'", value: c1, onChange: (v) => {
+    return /* @__PURE__ */ React.createElement("div", { className: "space-y-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-4 items-end" }, /* @__PURE__ */ React.createElement("div", { className: "grid md:grid-cols-2 gap-4 max-w-2xl flex-1", style: { minWidth: 300 } }, /* @__PURE__ */ React.createElement(CountryPicker, { label: "🇦 מדינה א'", value: c1, onChange: (v) => {
       setC1(v);
       setConclusion(null);
     }, countries, exclude: [c2] }), /* @__PURE__ */ React.createElement(CountryPicker, { label: "🇧 מדינה ב'", value: c2, onChange: (v) => {
       setC2(v);
       setConclusion(null);
-    }, countries, exclude: [c1] })), (r1.loading || r2.loading) && /* @__PURE__ */ React.createElement(AiLoadingState, { name: r1.loading ? c1 : c2 }), !r1.loading && !r2.loading && (r1.error || r2.error) && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, "⚠️ נכשלה השלמת נתונים"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, r1.error || r2.error)), !r1.loading && !r2.loading && r1.metrics && r2.metrics && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, null), /* @__PURE__ */ React.createElement("div", { className: "flex gap-6 flex-wrap" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_c = r1.country) == null ? void 0 : _c.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c1), r1.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_d = r2.country) == null ? void 0 : _d.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c2), r2.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null))), gap && gap.topDriver && /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl p-4 border flex items-center gap-3", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, "🎯"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed" }, /* @__PURE__ */ React.createElement("b", null, gap.leader.name), " מובילה על ", /* @__PURE__ */ React.createElement("b", null, gap.trailer.name), " ב-", /* @__PURE__ */ React.createElement("b", null, gap.scoreDiff), " נקודות ציון כולל. הגורם המשמעותי ביותר לטובת ", gap.leader.name, " הוא ", /* @__PURE__ */ React.createElement("b", null, gap.topDriver.label), " (", fmtDec(gap.leader.m[gap.topDriver.key]), " מול ", fmtDec(gap.trailer.m[gap.topDriver.key]), ")", gap.offsetByOthers ? /* @__PURE__ */ React.createElement(React.Fragment, null, ", אך יתרון זה מקוזז חלקית על ידי מדדים אחרים שבהם ", gap.trailer.name, " חזקה יותר — ולכן הפער הכולל קטן מהפער בממד הבודד הזה.") : ".")), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 השוואת מגמת מבקרים"), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false, scales: { x: { offset: false } } }, onChartReady: handleLineChartReady }), /* @__PURE__ */ React.createElement("div", { className: "mt-3 space-y-2" }, [{ name: c1, m: r1.metrics, color: theme.solid }, { name: c2, m: r2.metrics, color: "#94a3b8" }].map(({ name, m, color }) => /* @__PURE__ */ React.createElement("div", { key: name }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1.5 text-xs mb-1" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block" } }), /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, name)), /* @__PURE__ */ React.createElement("div", { style: { position: "relative", height: 12, direction: "ltr" } }, (yearPixelPositions || []).map((px, i) => {
+    }, countries, exclude: [c1] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1.5" }, "📅 שנה"), /* @__PURE__ */ React.createElement("select", { value: selectedYear, onChange: (e) => {
+      setSelectedYear(e.target.value);
+      setConclusion(null);
+    }, className: "input-field border rounded-xl px-3 py-2.5 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "כל השנים"), years.map((y) => /* @__PURE__ */ React.createElement("option", { key: y, value: String(y) }, y))))), (r1.loading || r2.loading) && /* @__PURE__ */ React.createElement(AiLoadingState, { name: r1.loading ? c1 : c2 }), !r1.loading && !r2.loading && (r1.error || r2.error) && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement("p", { className: "text-red-500 font-medium" }, "⚠️ נכשלה השלמת נתונים"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-2" }, r1.error || r2.error)), !r1.loading && !r2.loading && dm1 && dm2 && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement(ExportBar, null), /* @__PURE__ */ React.createElement("div", { className: "flex gap-6 flex-wrap items-center" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_c = r1.country) == null ? void 0 : _c.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c1), r1.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-xl" }, (_d = r2.country) == null ? void 0 : _d.flag), /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-primary" }, c2), r2.estimated && /* @__PURE__ */ React.createElement(AiEstimateBadge, null)), isSingleYear && /* @__PURE__ */ React.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full font-medium", style: { background: hexA("#f59e0b", 0.15), color: "#b45309" } }, "📅 תצוגת שנת ", selectedYear, " בלבד")), gap && gap.topDriver && /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl p-4 border flex items-center gap-3", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("span", { className: "text-2xl" }, "🎯"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed" }, /* @__PURE__ */ React.createElement("b", null, gap.leader.name), " מובילה על ", /* @__PURE__ */ React.createElement("b", null, gap.trailer.name), " ב-", /* @__PURE__ */ React.createElement("b", null, gap.scoreDiff), " נקודות ציון כולל. הגורם המשמעותי ביותר לטובת ", gap.leader.name, " הוא ", /* @__PURE__ */ React.createElement("b", null, gap.topDriver.label), " (", fmtDec(gap.leader.m[gap.topDriver.key]), " מול ", fmtDec(gap.trailer.m[gap.topDriver.key]), ")", gap.offsetByOthers ? /* @__PURE__ */ React.createElement(React.Fragment, null, ", אך יתרון זה מקוזז חלקית על ידי מדדים אחרים שבהם ", gap.trailer.name, " חזקה יותר — ולכן הפער הכולל קטן מהפער בממד הבודד הזה.") : ".")), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 השוואת מגמת מבקרים", isSingleYear && /* @__PURE__ */ React.createElement("span", { className: "text-xs text-muted font-normal" }, " · השנה שנבחרה מודגשת בגרף")), lineData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "line", data: lineData, options: { responsive: true, maintainAspectRatio: false, scales: { x: { offset: false } } }, onChartReady: handleLineChartReady }), /* @__PURE__ */ React.createElement("div", { className: "mt-3 space-y-2" }, [{ name: c1, m: r1.metrics, color: theme.solid }, { name: c2, m: r2.metrics, color: "#94a3b8" }].map(({ name, m, color }) => /* @__PURE__ */ React.createElement("div", { key: name }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1.5 text-xs mb-1" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block" } }), /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, name)), /* @__PURE__ */ React.createElement("div", { style: { position: "relative", height: 12, direction: "ltr" } }, (yearPixelPositions || []).map((px, i) => {
       const y = years[i];
       return /* @__PURE__ */ React.createElement("div", {
         key: y,
         title: `${y}: ${m.advisoryByYear[y] === 2 ? "אזהרת מסע" : "תקין"}`,
         style: { position: "absolute", left: px - 5, top: 0, width: 10, height: 12, borderRadius: 2, background: m.advisoryByYear[y] === 2 ? "#ef4444" : hexA(color, 0.3) }
       });
-    })))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, background: "#ef4444", display: "inline-block", borderRadius: 2 } }), " שנים עם אזהרת מסע — בדקו אם הן מתואמות לירידות בגרף"))), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "⚖️ השוואת מדדים מרכזיים (סולם 0-100)"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm flex items-center gap-1.5" }, "💹 השוואת רווחיות (%)", /* @__PURE__ */ React.createElement(InfoTip, { text: "מוצג בגרף נפרד כי סולם הערכים שלו קטן משמעותית משאר המדדים (בדרך כלל פחות מ-1-2%)." })), roiChartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: roiChartData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "🏅 מי מוביל בכל מדד"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-end gap-4 mb-3" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5 text-xs font-semibold", style: { color: theme.solid } }, /* @__PURE__ */ React.createElement("span", { style: { width: 10, height: 10, borderRadius: "50%", background: theme.solid, display: "inline-block" } }), c1), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5 text-xs font-semibold text-secondary" }, /* @__PURE__ */ React.createElement("span", { style: { width: 10, height: 10, borderRadius: "50%", background: "#94a3b8", display: "inline-block" } }), c2)), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, COMPARE_METRIC_DEFS.map((m) => {
-      const v1 = r1.metrics[m.key], v2 = r2.metrics[m.key];
+    })))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, background: "#ef4444", display: "inline-block", borderRadius: 2 } }), " שנים עם אזהרת מסע — בדקו אם הן מתואמות לירידות בגרף"))), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "⚖️ השוואת מדדים מרכזיים (סולם 0-100)"), barData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: barData, options: { responsive: true, maintainAspectRatio: false } })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm flex items-center gap-1.5" }, "💹 השוואת רווחיות (%)", /* @__PURE__ */ React.createElement(InfoTip, { text: "מוצג בגרף נפרד כי סולם הערכים שלו קטן משמעותית משאר המדדים (בדרך כלל פחות מ-1-2%)." })), roiChartData && /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: roiChartData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "🏅 מי מוביל בכל מדד"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-end gap-4 mb-3" }, /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5 text-xs font-semibold", style: { color: theme.solid } }, /* @__PURE__ */ React.createElement("span", { style: { width: 10, height: 10, borderRadius: "50%", background: theme.solid, display: "inline-block" } }), c1), /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1.5 text-xs font-semibold text-secondary" }, /* @__PURE__ */ React.createElement("span", { style: { width: 10, height: 10, borderRadius: "50%", background: "#94a3b8", display: "inline-block" } }), c2)), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, activeMetricDefs.map((m) => {
+      const v1 = dm1[m.key], v2 = dm2[m.key];
       const c1Wins = v1 > v2, tie = v1 === v2;
       return /* @__PURE__ */ React.createElement("div", { key: m.key, className: "flex items-center justify-between text-sm py-1.5 border-b divider last:border-0" }, /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, m.label), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ React.createElement("span", { className: `font-semibold ${c1Wins && !tie ? "" : "text-secondary"}`, style: c1Wins && !tie ? { color: theme.solid } : {} }, c1Wins && !tie && "👑 ", fmtDec(v1)), /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "·"), /* @__PURE__ */ React.createElement("span", { className: `font-semibold ${!c1Wins && !tie ? "" : "text-secondary"}`, style: !c1Wins && !tie ? { color: theme.solid } : {} }, !tie && !c1Wins && "👑 ", fmtDec(v2))));
-    }))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm" }, "💬 מסקנה אסטרטגית"), /* @__PURE__ */ React.createElement("button", { onClick: runConclusion, disabled: conclusionLoading, className: `px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50` }, conclusionLoading ? "🔄 מנתח..." : conclusion ? "🔄 הרץ מחדש" : "▶️ בצע ניתוח השוואתי")), conclusionError && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "⚠️ שגיאה: ", conclusionError), conclusion && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, conclusion), !conclusion && !conclusionLoading && !conclusionError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, "לחץ לקבלת ניתוח מנוסח: איזו מדינה חזקה יותר, ולאן כדאי להפנות משאבי שיווק.")), /* @__PURE__ */ React.createElement(OpenQuestionAI, { key: `ask-${c1}-${c2}`, theme, subject: `${c1} מול ${c2}`, data: { c1, c2, m1: { sentiment: r1.metrics.sentiment, religiousAffinity: r1.metrics.religiousAffinity, roi: r1.metrics.roi, growthTrend: r1.metrics.growthTrend, totalScore: r1.metrics.totalScore }, m2: { sentiment: r2.metrics.sentiment, religiousAffinity: r2.metrics.religiousAffinity, roi: r2.metrics.roi, growthTrend: r2.metrics.growthTrend, totalScore: r2.metrics.totalScore } }, placeholder: `לדוגמה: מה ההבדל העיקרי בין ${c1} ל-${c2}?` })));
+    }))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between flex-wrap gap-3 mb-3" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm" }, "💬 מסקנה אסטרטגית"), /* @__PURE__ */ React.createElement("button", { onClick: runConclusion, disabled: conclusionLoading, className: `px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-l ${theme.grad} disabled:opacity-50` }, conclusionLoading ? "🔄 מנתח..." : conclusion ? "🔄 הרץ מחדש" : "▶️ בצע ניתוח השוואתי")), conclusionError && /* @__PURE__ */ React.createElement("p", { className: "text-red-500 text-sm" }, "⚠️ שגיאה: ", conclusionError), conclusion && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-primary leading-relaxed whitespace-pre-line", style: { animation: "fadeIn 0.3s ease-in" } }, conclusion), !conclusion && !conclusionLoading && !conclusionError && /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted" }, "לחץ לקבלת ניתוח מנוסח: איזו מדינה חזקה יותר, ולאן כדאי להפנות משאבי שיווק.")), /* @__PURE__ */ React.createElement(OpenQuestionAI, { key: `ask-${c1}-${c2}-${selectedYear}`, theme, subject: isSingleYear ? `${c1} מול ${c2} (${selectedYear})` : `${c1} מול ${c2}`, data: { c1, c2, year: isSingleYear ? Number(selectedYear) : "כל הטווח", m1: { sentiment: dm1.sentiment, religiousAffinity: dm1.religiousAffinity, roi: dm1.roi, growthTrend: dm1.growthTrend, totalScore: dm1.totalScore }, m2: { sentiment: dm2.sentiment, religiousAffinity: dm2.religiousAffinity, roi: dm2.roi, growthTrend: dm2.growthTrend, totalScore: dm2.totalScore } }, placeholder: `לדוגמה: מה ההבדל העיקרי בין ${c1} ל-${c2}?` })));
   }
   function RankingAnalysis({ years, theme, countries, allMetrics }) {
     const [selected, setSelected] = useState(countries.slice(0, 5).map((c) => c.name_he));
