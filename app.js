@@ -384,32 +384,6 @@ if (typeof window !== "undefined") {
       if (error) throw error;
       return data.map(normalizeMetricRow);
     },
-    async upsertCountry(country) {
-      const { data, error } = await sb.from("countries").upsert(country, { onConflict: "name_en" }).select().single();
-      if (error) throw error;
-      return data;
-    },
-    async deleteCountry(countryId) {
-      const { error } = await sb.from("countries").delete().eq("id", countryId);
-      if (error) throw error;
-    },
-    async upsertMetric(row) {
-      const { error } = await sb.from("country_metrics").upsert(row, { onConflict: "country_id,year" });
-      if (error) throw error;
-    },
-    async deleteMetric(countryId, year) {
-      const { error } = await sb.from("country_metrics").delete().eq("country_id", countryId).eq("year", year);
-      if (error) throw error;
-    },
-    async getSetting(key, fallback) {
-      const { data, error } = await sb.from("app_settings").select("value").eq("key", key).maybeSingle();
-      if (error || !data) return fallback;
-      return data.value;
-    },
-    async setSetting(key, value) {
-      const { error } = await sb.from("app_settings").upsert({ key, value }, { onConflict: "key" });
-      if (error) throw error;
-    },
     async estimateViaAI(name_en, name_he, years) {
       const { data, error } = await sb.functions.invoke("estimate-country", { body: { name_en, name_he, years } });
       if (error) throw new Error(await extractFunctionError(error));
@@ -588,49 +562,6 @@ if (typeof window !== "undefined") {
       }
     ));
   }
-  function LoginScreen({ onLogin, currentPassword }) {
-    const [pw, setPw] = useState("");
-    const [error, setError] = useState("");
-    const [shake, setShake] = useState(false);
-    const [showPw, setShowPw] = useState(false);
-    const submit = (e) => {
-      if (e && e.preventDefault) e.preventDefault();
-      if (pw.trim().length > 0 && pw.trim() === (currentPassword || "").trim()) {
-        setError("");
-        onLogin();
-      } else {
-        setError("🚫 סיסמה שגויה. נסו שוב.");
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
-      }
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden", dir: "rtl" }, /* @__PURE__ */ React.createElement(GlobalStyles, null), /* @__PURE__ */ React.createElement("div", { className: "absolute inset-0 opacity-25", style: { backgroundImage: "radial-gradient(circle at 20% 20%, #0284c7 0, transparent 40%), radial-gradient(circle at 80% 70%, #4338ca 0, transparent 40%)" } }), /* @__PURE__ */ React.createElement("div", { className: `relative z-10 w-full max-w-md mx-4 ${shake ? "animate-[shake_0.4s]" : ""}` }, /* @__PURE__ */ React.createElement("div", { className: "text-center mb-8" }, /* @__PURE__ */ React.createElement("div", { className: "inline-flex items-center justify-center mb-4 bg-white/90 rounded-xl p-3 shadow-lg" }, /* @__PURE__ */ React.createElement(MinistryLogo, { size: 56 })), /* @__PURE__ */ React.createElement("h1", { className: "text-2xl font-bold text-white tracking-tight" }, "🧳 מערכת ניתוח שיווק תיירות"), /* @__PURE__ */ React.createElement("p", { className: "text-slate-400 text-sm mt-1" }, "✈️ לוח בקרה אנליטי — גישה מוגבלת 🔒")), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, className: "bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl" }, /* @__PURE__ */ React.createElement("label", { className: "block text-sm text-slate-300 mb-2 font-medium" }, "🔑 סיסמת גישה"), /* @__PURE__ */ React.createElement("div", { className: "relative" }, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        type: showPw ? "text" : "password",
-        value: pw,
-        onChange: (e) => {
-          setPw(e.target.value);
-          setError("");
-        },
-        onKeyDown: (e) => {
-          if (e.key === "Enter") submit(e);
-        },
-        placeholder: "הזינו סיסמה",
-        autoFocus: true,
-        className: "w-full bg-slate-900/60 border border-slate-700 rounded-xl py-3 px-4 pl-11 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-      }
-    ), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        onClick: () => setShowPw((s) => !s),
-        tabIndex: -1,
-        className: "absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-lg"
-      },
-      showPw ? "🙈" : "👁️"
-    )), error && /* @__PURE__ */ React.createElement("p", { className: "text-red-400 text-sm mt-2" }, error), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: submit, className: "w-full mt-6 bg-gradient-to-l from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 text-white font-semibold py-3 rounded-xl transition shadow-lg cursor-pointer" }, "🚪 כניסה למערכת")), /* @__PURE__ */ React.createElement("p", { className: "text-center text-slate-500 text-xs mt-6" }, "© 2026 משרד התיירות · מחלקת שיווק")));
-  }
   const WORLD_COUNTRIES_HE = [
     { name_he: "יוון", name_en: "Greece", flag: "🇬🇷", lat: 37.98, lng: 23.73, distance_km: 1253 },
     { name_he: "קפריסין", name_en: "Cyprus", flag: "🇨🇾", lat: 35.17, lng: 33.36, distance_km: 415 },
@@ -694,9 +625,6 @@ if (typeof window !== "undefined") {
     { name_he: "איסלנד", name_en: "Iceland", flag: "🇮🇸", lat: 64.15, lng: -21.94, distance_km: 5288 },
     { name_he: "לוקסמבורג", name_en: "Luxembourg", flag: "🇱🇺", lat: 49.61, lng: 6.13, distance_km: 3120 }
   ];
-  function toTitleCase(str) {
-    return str.trim().toLowerCase().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-  }
   function lookupCanonicalCountry(name_en, name_he) {
     const normalizedEn = (name_en || "").trim().toLowerCase();
     return WORLD_COUNTRIES_HE.find(
@@ -1348,197 +1276,7 @@ if (typeof window !== "undefined") {
     { value: "Oceania", label: "אוקיאניה (Oceania)" },
     { value: "Europe/Asia", label: "אירופה/אסיה (Europe/Asia)" }
   ];
-  function buildFlagOptions(countries) {
-    const map = /* @__PURE__ */ new Map();
-    WORLD_COUNTRIES_HE.forEach((c) => map.set(c.flag, c.name_he));
-    countries.forEach((c) => {
-      if (c.flag) map.set(c.flag, c.name_he);
-    });
-    return Array.from(map.entries()).map(([flag, name]) => ({ flag, name }));
-  }
-  function CrudModal({ onClose, countries, onSaved }) {
-    const [step, setStep] = useState(1);
-    const [mode, setMode] = useState("new");
-    const [country, setCountry] = useState({ name_en: "", name_he: "", flag: "", region: "", Distance: "" });
-    const [existingId, setExistingId] = useState(null);
-    const [year, setYear] = useState((/* @__PURE__ */ new Date()).getFullYear());
-    const [metric, setMetric] = useState({
-      hdi: "",
-      outbound_tourism_millions: "",
-      air_transport_quality: "",
-      has_direct_flights: false,
-      jewish_population: "",
-      online_search_index: "",
-      travel_advisory: 1,
-      entries_to_israel_thousands: "",
-      has_office: false,
-      gdp_per_capita: "",
-      average_expenditure_per_trip: "",
-      number_of_passengers_per_year: "",
-      evangelical_population: ""
-    });
-    const [missingWarning, setMissingWarning] = useState([]);
-    const [saving, setSaving] = useState(false);
-    const [aiFilling, setAiFilling] = useState(false);
-    const flagOptions = useMemo(() => buildFlagOptions(countries), [countries]);
-    const [basicsAiLoading, setBasicsAiLoading] = useState(false);
-    const [basicsAutoFilled, setBasicsAutoFilled] = useState(false);
-    const selectExisting = (id) => {
-      const c = countries.find((x) => x.id === Number(id));
-      if (c) {
-        setExistingId(c.id);
-        setCountry(c);
-      }
-    };
-    const handleNameEnBlur = () => {
-      const fixed = toTitleCase(country.name_en);
-      if (fixed === country.name_en && basicsAutoFilled) return;
-      const match = lookupCanonicalCountry(fixed, country.name_he);
-      if (match) {
-        setCountry((c) => __spreadProps(__spreadValues({}, c), { name_en: fixed, name_he: c.name_he || match.name_he, flag: c.flag || match.flag, Distance: c.Distance !== "" ? c.Distance : match.distance_km }));
-        setBasicsAutoFilled(true);
-      } else {
-        setCountry((c) => __spreadProps(__spreadValues({}, c), { name_en: fixed }));
-        setBasicsAutoFilled(false);
-      }
-    };
-    const aiCompleteBasics = async () => {
-      if (!country.name_en.trim()) return;
-      setBasicsAiLoading(true);
-      try {
-        const res = await DataAPI.generateInsight("country_basics", { name_en: country.name_en });
-        const parsed = JSON.parse(res.text);
-        setCountry((c) => {
-          var _a;
-          return __spreadProps(__spreadValues({}, c), {
-            name_he: c.name_he || parsed.name_he || "",
-            flag: c.flag || parsed.flag || "",
-            Distance: c.Distance !== "" ? c.Distance : (_a = parsed.distance_km) != null ? _a : ""
-          });
-        });
-      } catch (err) {
-        alert("שגיאה בהשלמת AI: " + err.message);
-      }
-      setBasicsAiLoading(false);
-    };
-    const goPart2 = () => {
-      if (mode === "new" && (!country.name_en || !country.name_he)) return;
-      setStep(2);
-    };
-    const checkMissing = () => {
-      const required = ["hdi", "outbound_tourism_millions", "air_transport_quality", "jewish_population", "online_search_index", "entries_to_israel_thousands"];
-      return required.filter((k) => metric[k] === "" || metric[k] === null);
-    };
-    const tryFinish = () => {
-      const missing = checkMissing();
-      setMissingWarning(missing);
-      if (missing.length === 0) doSave(metric);
-    };
-    const fillFromAI = async () => {
-      setAiFilling(true);
-      try {
-        const result = await DataAPI.estimateViaAI(country.name_en, country.name_he, [year]);
-        const row = result.rows.find((r) => r.year === year) || result.rows[0];
-        setMetric((m) => __spreadProps(__spreadValues({}, m), {
-          hdi: m.hdi !== "" ? m.hdi : row.hdi,
-          outbound_tourism_millions: m.outbound_tourism_millions !== "" ? m.outbound_tourism_millions : row.outbound_tourism_millions,
-          air_transport_quality: m.air_transport_quality !== "" ? m.air_transport_quality : row.air_transport_quality,
-          has_direct_flights: m.has_direct_flights || row.has_direct_flights,
-          jewish_population: m.jewish_population !== "" ? m.jewish_population : row.jewish_population,
-          online_search_index: m.online_search_index !== "" ? m.online_search_index : row.online_search_index,
-          travel_advisory: m.travel_advisory || row.travel_advisory,
-          entries_to_israel_thousands: m.entries_to_israel_thousands !== "" ? m.entries_to_israel_thousands : row.entries_to_israel_thousands,
-          gdp_per_capita: m.gdp_per_capita !== "" ? m.gdp_per_capita : row.gdp_per_capita,
-          average_expenditure_per_trip: m.average_expenditure_per_trip !== "" ? m.average_expenditure_per_trip : row.average_expenditure_per_trip,
-          number_of_passengers_per_year: m.number_of_passengers_per_year !== "" ? m.number_of_passengers_per_year : row.number_of_passengers_per_year,
-          evangelical_population: m.evangelical_population !== "" ? m.evangelical_population : row.evangelical_population,
-          _aiFilled: true
-        }));
-        setMissingWarning([]);
-      } catch (err) {
-        alert("שגיאה בהשלמת AI: " + err.message);
-      }
-      setAiFilling(false);
-    };
-    const doSave = async (finalMetric) => {
-      setSaving(true);
-      try {
-        let countryId = existingId;
-        if (mode === "new" || country.flag || country.region || country.Distance !== "") {
-          const saved = await DataAPI.upsertCountry({
-            name_en: country.name_en,
-            name_he: country.name_he,
-            flag: country.flag,
-            region: country.region,
-            Distance: country.Distance === "" ? null : Number(country.Distance)
-          });
-          countryId = saved.id;
-        }
-        await DataAPI.upsertMetric({
-          country_id: countryId,
-          year,
-          hdi: finalMetric.hdi === "" ? null : Number(finalMetric.hdi),
-          outbound_tourism_millions: finalMetric.outbound_tourism_millions === "" ? null : Number(finalMetric.outbound_tourism_millions),
-          air_transport_quality: finalMetric.air_transport_quality === "" ? null : Number(finalMetric.air_transport_quality),
-          has_direct_flights: !!finalMetric.has_direct_flights,
-          jewish_population: finalMetric.jewish_population === "" ? null : Math.round(Number(finalMetric.jewish_population)),
-          online_search_index: finalMetric.online_search_index === "" ? null : Math.round(Number(finalMetric.online_search_index)),
-          travel_advisory: Number(finalMetric.travel_advisory) || 1,
-          entries_to_israel_thousands: finalMetric.entries_to_israel_thousands === "" ? null : Number(finalMetric.entries_to_israel_thousands),
-          has_office: !!finalMetric.has_office,
-          gdp_per_capita: finalMetric.gdp_per_capita === "" ? null : Number(finalMetric.gdp_per_capita),
-          average_expenditure_per_trip: finalMetric.average_expenditure_per_trip === "" ? null : Number(finalMetric.average_expenditure_per_trip),
-          number_of_passengers_per_year: finalMetric.number_of_passengers_per_year === "" ? null : Number(finalMetric.number_of_passengers_per_year),
-          evangelical_population: finalMetric.evangelical_population === "" ? null : Math.round(Number(finalMetric.evangelical_population)),
-          is_ai_estimated: !!finalMetric._aiFilled,
-          source: finalMetric._aiFilled ? "gemini_ai_estimate" : "manual_edit"
-        });
-        onSaved();
-        onClose();
-      } catch (err) {
-        alert("שגיאה בשמירה: " + err.message);
-      }
-      setSaving(false);
-    };
-    const field = (key, label, opts = {}) => {
-      var _a;
-      return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, label), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "number",
-          value: metric[key],
-          min: opts.min,
-          max: opts.max,
-          step: (_a = opts.step) != null ? _a : "any",
-          onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { [key]: e.target.value, _aiFilled: false })),
-          className: `input-field w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${missingWarning.includes(key) ? "ring-2 ring-amber-400" : ""}`
-        }
-      ), opts.hint && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-0.5" }, opts.hint));
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[60] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "📥 ניהול דאטה-בייס — חלק ", step, " מתוך 2"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "✕")), /* @__PURE__ */ React.createElement("div", { className: "p-6 space-y-5" }, step === 1 && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "חלק 1 מתוך 2: הקמת/בחירת מדינה — פרטים קבועים שאינם תלויי שנה."), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setMode("new"), className: `px-4 py-2 rounded-xl text-sm font-medium ${mode === "new" ? "bg-blue-600 text-white" : "text-secondary border"}` }, "➕ מדינה חדשה"), /* @__PURE__ */ React.createElement("button", { onClick: () => setMode("existing"), className: `px-4 py-2 rounded-xl text-sm font-medium ${mode === "existing" ? "bg-blue-600 text-white" : "text-secondary border"}` }, "✏️ מדינה קיימת")), mode === "existing" ? /* @__PURE__ */ React.createElement("select", { onChange: (e) => selectExisting(e.target.value), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "בחר מדינה..."), countries.map((c) => /* @__PURE__ */ React.createElement("option", { key: c.id, value: c.id }, c.flag, " ", c.name_he))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "שם באנגלית"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        placeholder: "Greece / FRANCE / france...",
-        value: country.name_en,
-        onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { name_en: e.target.value })),
-        onBlur: handleNameEnBlur,
-        className: "input-field w-full border rounded-lg px-3 py-2 text-sm"
-      }
-    ), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-0.5" }, "הפורמט מתוקן אוטומטית (אות ראשונה גדולה) כשעוברים לשדה הבא")), country.name_en.trim() && /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "שם בעברית ", basicsAutoFilled && /* @__PURE__ */ React.createElement("span", { className: "text-emerald-500" }, "✓ מולא אוטומטית")), /* @__PURE__ */ React.createElement("input", { placeholder: "יוון", value: country.name_he, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { name_he: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "דגל"), /* @__PURE__ */ React.createElement("select", { value: country.flag, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { flag: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "בחר דגל..."), flagOptions.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.flag, value: f.flag }, f.flag, " ", f.name))))), country.name_en.trim() && !country.name_he && /* @__PURE__ */ React.createElement("button", { onClick: aiCompleteBasics, disabled: basicsAiLoading, className: "text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium" }, basicsAiLoading ? "🔄 משלים..." : "🤖 השלם שם בעברית, דגל ומרחק עם AI")), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "אזור / יבשת"), /* @__PURE__ */ React.createElement("select", { value: country.region, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { region: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: "" }, "בחר אזור..."), REGION_OPTIONS.map((r) => /* @__PURE__ */ React.createElement("option", { key: r.value, value: r.value }, r.label)))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, 'מרחק מישראל (ק"מ) ', basicsAutoFilled && country.Distance !== "" && /* @__PURE__ */ React.createElement("span", { className: "text-emerald-500" }, "✓ חושב אוטומטית")), /* @__PURE__ */ React.createElement("input", { type: "number", min: "0", step: "1", value: country.Distance, onChange: (e) => setCountry((c) => __spreadProps(__spreadValues({}, c), { Distance: e.target.value })), className: "input-field w-full border rounded-lg px-3 py-2 text-sm" }))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-end" }, /* @__PURE__ */ React.createElement("button", { onClick: goPart2, className: "bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium" }, "המשך לחלק 2 ←"))), step === 2 && /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted" }, "חלק 2 מתוך 2: נתונים שנתיים — ערכים שמשתנים משנה לשנה."), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("label", { className: "block text-xs font-semibold text-secondary mb-1" }, "שנה"), /* @__PURE__ */ React.createElement("input", { type: "number", min: "2000", max: "2100", step: "1", value: year, onChange: (e) => setYear(Number(e.target.value)), className: "input-field border rounded-lg px-3 py-2 text-sm w-32" })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3" }, field("hdi", "HDI", { min: 0, max: 1, step: 1e-3, hint: "ערך בין 0.000 ל-1.000" }), field("outbound_tourism_millions", "נפח תיירות יוצאת (מיליון)", { min: 0, step: 0.1, hint: "מספר עשרוני, מיליוני נוסעים" }), field("air_transport_quality", "איכות תעופה (TTDI)", { min: 0, max: 10, step: 0.1, hint: "ערך בין 0 ל-10" }), field("jewish_population", "אוכלוסייה יהודית (אלפים)", { min: 0, step: 0.1, hint: "מספר עשרוני, באלפי אנשים" }), field("online_search_index", "מדד חיפוש מקוון", { min: 0, max: 100, step: 1, hint: "ערך בין 0 ל-100" }), field("entries_to_israel_thousands", "כניסות לישראל (אלפים)", { min: 0, step: 0.1, hint: "מספר עשרוני, באלפי אנשים" }), field("gdp_per_capita", "תוצר לנפש ($)", { min: 0, step: 1, hint: "דולרים לנפש" }), field("average_expenditure_per_trip", "הוצאה ממוצעת לנסיעה ($)", { min: 0, step: 1, hint: "דולרים לנסיעה" }), field("number_of_passengers_per_year", "נוסעים בטיסות (שנתי)", { min: 0, step: 1, hint: "מספר שלם" }), field("evangelical_population", "אוכלוסייה אוונגליסטית", { min: 0, step: 1, hint: "מספר שלם, אנשים" })), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-4 items-center" }, /* @__PURE__ */ React.createElement("label", { className: "flex items-center gap-2 text-sm text-secondary" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: !!metric.has_direct_flights, onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { has_direct_flights: e.target.checked })) }), " ✈️ טיסות ישירות"), /* @__PURE__ */ React.createElement("label", { className: "flex items-center gap-2 text-sm text-secondary" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: !!metric.has_office, onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { has_office: e.target.checked })) }), " ⭐ לשכה פעילה בשנה זו"), /* @__PURE__ */ React.createElement("label", { className: "text-sm text-secondary flex items-center gap-2" }, "אזהרת מסע:", /* @__PURE__ */ React.createElement("select", { value: metric.travel_advisory, onChange: (e) => setMetric((m) => __spreadProps(__spreadValues({}, m), { travel_advisory: e.target.value })), className: "input-field border rounded px-2 py-1 text-sm" }, /* @__PURE__ */ React.createElement("option", { value: 1 }, "1 · תקין"), /* @__PURE__ */ React.createElement("option", { value: 2 }, "2 · אזהרה")))), missingWarning.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "rounded-lg px-3 py-2 text-sm border", style: { background: hexA("#f59e0b", 0.1), borderColor: hexA("#f59e0b", 0.3), color: "#b45309" } }, "⚠️ יש ", missingWarning.length, " שדות חובה ריקים. אפשר למלא ידנית, להשלים אוטומטית עם AI, או להשאיר ריק ולהמשיך.", /* @__PURE__ */ React.createElement("div", { className: "mt-2 flex gap-2" }, /* @__PURE__ */ React.createElement("button", { onClick: fillFromAI, disabled: aiFilling, className: "bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium" }, aiFilling ? "🔄 משלים..." : "✨ השלם נתונים מהרשת (AI)"), /* @__PURE__ */ React.createElement("button", { onClick: () => doSave(metric), className: "border border-amber-400 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-medium" }, "השאר ריק והמשך"))), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between" }, /* @__PURE__ */ React.createElement("button", { onClick: () => setStep(1), className: "text-secondary text-sm" }, "→ חזרה"), /* @__PURE__ */ React.createElement("button", { onClick: tryFinish, disabled: saving, className: "bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium" }, saving ? "שומר..." : "✅ שמור למאגר"))))));
-  }
-  function DataManagementPanel({ countries, allMetrics, onRefresh, onAddNew }) {
-    const [filter, setFilter] = useState("");
-    const rows = allMetrics.map((m) => __spreadProps(__spreadValues({}, m), { country: countries.find((c) => c.id === m.country_id) })).filter((r) => r.country).filter((r) => !filter || r.country.name_he.includes(filter)).sort((a, b) => a.country.name_he.localeCompare(b.country.name_he) || a.year - b.year);
-    const deleteRow = async (row) => {
-      if (!confirm(`למחוק את הנתונים של ${row.country.name_he} לשנת ${row.year}?`)) return;
-      await DataAPI.deleteMetric(row.country_id, row.year);
-      onRefresh();
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between gap-3 flex-wrap" }, /* @__PURE__ */ React.createElement("input", { value: filter, onChange: (e) => setFilter(e.target.value), placeholder: "🔎 סינון לפי מדינה...", className: "input-field border rounded-lg px-3 py-2 text-sm w-64" }), /* @__PURE__ */ React.createElement("button", { onClick: onAddNew, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium" }, "➕ הוספת מדינה/שנה")), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider max-h-96 overflow-y-auto" }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-sm" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "מדינה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "שנה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "כניסות (אלפים)"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }, "מקור"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-3 py-2" }))), /* @__PURE__ */ React.createElement("tbody", null, rows.map((r) => /* @__PURE__ */ React.createElement("tr", { key: `${r.country_id}-${r.year}`, className: "border-t divider" }, /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-primary" }, r.country.flag, " ", r.country.name_he, " ", r.has_office && "⭐"), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-secondary" }, r.year), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-secondary" }, fmtDec(r.entries_to_israel_thousands)), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5 text-xs" }, r.is_ai_estimated ? "✨ AI" : r.source), /* @__PURE__ */ React.createElement("td", { className: "px-3 py-1.5" }, /* @__PURE__ */ React.createElement("button", { onClick: () => deleteRow(r), className: "text-red-500 hover:text-red-700 text-xs" }, "🗑️ מחק"))))))));
-  }
-  function SettingsSidebar({ open, onClose, mode, setMode, currentPassword, onChangePassword, countries, allMetrics, onRefresh, onLogout }) {
-    const [showPwModal, setShowPwModal] = useState(false);
-    const [showManageModal, setShowManageModal] = useState(false);
+  function SettingsSidebar({ open, onClose, mode, setMode }) {
     const [showMethodModal, setShowMethodModal] = useState(false);
     const [showGuideModal, setShowGuideModal] = useState(false);
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-40 transition-opacity", style: { background: "var(--overlay-bg)", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none" }, onClick: onClose }), /* @__PURE__ */ React.createElement("div", { className: "fixed top-0 left-0 h-full w-full max-w-sm z-50 shadow-2xl transition-transform duration-300 overflow-y-auto card", style: { transform: open ? "translateX(0)" : "translateX(-100%)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between sticky top-0 card z-10" }, /* @__PURE__ */ React.createElement("h2", { className: "font-bold text-lg text-primary" }, "⚙️ הגדרות"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "✕")), /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-8" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "🌓 מצב תצוגה"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-3 gap-2" }, [["light", "☀️ בהיר"], ["dark", "🌙 כהה"], ["system", "🖥️ אוטומטי"]].map(([key, label]) => /* @__PURE__ */ React.createElement(
@@ -1550,18 +1288,13 @@ if (typeof window !== "undefined") {
         style: mode === key ? { borderColor: "#2563eb", background: hexA("#2563eb", 0.12), color: "#2563eb" } : { borderColor: "var(--card-border)", color: "var(--text-secondary)" }
       },
       /* @__PURE__ */ React.createElement("span", { className: "text-xs font-medium" }, label)
-    ))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2" }, '💡 "אוטומטי" עובר לכהה אוטומטית בין 19:00 ל-06:00 לפי שעון המכשיר שלך.')), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "🔑 סיסמה"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowPwModal(true), className: "w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg" }, "שינוי סיסמה")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "🗄️ בסיס הנתונים"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowManageModal(true), className: "w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg" }, "ניהול נתונים (הוספה / עריכה / מחיקה)")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "📖 עזרה"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowGuideModal(true), className: "w-full px-4 py-2.5 rounded-lg text-sm font-medium text-white", style: { background: "linear-gradient(135deg,#0284c7,#4338ca)" } }, "מדריך למשתמש")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "🧮 מתודולוגיה"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowMethodModal(true), className: "w-full px-4 py-2.5 rounded-lg text-sm font-medium border", style: { borderColor: "var(--card-border)", color: "var(--text-primary)" } }, "איך מחושבת הרגרסיה הליניארית?")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("button", { onClick: onLogout, className: "w-full px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 border border-red-300" }, "🚪 התנתקות")))), showPwModal && /* @__PURE__ */ React.createElement(ChangePasswordModal, { onClose: () => setShowPwModal(false), onChangePassword }), showManageModal && /* @__PURE__ */ React.createElement(DataManagementModal, { onClose: () => setShowManageModal(false), countries, allMetrics, onRefresh }), showGuideModal && /* @__PURE__ */ React.createElement(UserGuideModal, { onClose: () => setShowGuideModal(false) }), showMethodModal && /* @__PURE__ */ React.createElement(RegressionMethodologyModal, { onClose: () => setShowMethodModal(false) }));
+    ))), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2" }, '💡 "אוטומטי" עובר לכהה אוטומטית בין 19:00 ל-06:00 לפי שעון המכשיר שלך.')), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "📖 עזרה"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowGuideModal(true), className: "w-full px-4 py-2.5 rounded-lg text-sm font-medium text-white", style: { background: "linear-gradient(135deg,#0284c7,#4338ca)" } }, "מדריך למשתמש")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-semibold text-secondary mb-3" }, "🧮 מתודולוגיה"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowMethodModal(true), className: "w-full px-4 py-2.5 rounded-lg text-sm font-medium border", style: { borderColor: "var(--card-border)", color: "var(--text-primary)" } }, "איך מחושבת הרגרסיה הליניארית?")))), showGuideModal && /* @__PURE__ */ React.createElement(UserGuideModal, { onClose: () => setShowGuideModal(false) }), showMethodModal && /* @__PURE__ */ React.createElement(RegressionMethodologyModal, { onClose: () => setShowMethodModal(false) }));
   }
   const GUIDE_UNITS = [
     {
       emoji: "👋",
       title: "ברוכים הבאים — מה המערכת הזו עושה",
-      body: `זו מערכת שעוזרת לצוות השיווק של משרד התיירות להבין מאיזה מדינות בעולם הכי כדאי למשוך תיירים לישראל, ולמה. במקום להסתמך על תחושת בטן, המערכת אוספת נתונים אמיתיים (כמו כמה תיירים הגיעו בעבר, כמה אנשים מחפשים "ישראל" באינטרנט, ועוד) ומציגה אותם בצורה ברורה — כולל, במקומות מסוימים, ניתוח בעזרת בינה מלאכותית (AI) שמסביר את המשמעות במילים פשוטות.`
-    },
-    {
-      emoji: "🔑",
-      title: "איך נכנסים למערכת",
-      body: `בכניסה לאתר מופיע מסך שמבקש סיסמה. הסיסמה משותפת לצוות, וניתן לשנות אותה בכל עת דרך ⚙️ הגדרות ← "שינוי סיסמה" — בלי צורך להזין את הסיסמה הישנה. יש גם כפתור עין קטן (👁️) בשדה הסיסמה שמאפשר לראות מה הקלדתם, למקרה שקשה לקרוא תווים מוסתרים.`
+      body: `זו מערכת שעוזרת לצוות השיווק של משרד התיירות להבין מאיזה מדינות בעולם הכי כדאי למשוך תיירים לישראל, ולמה. במקום להסתמך על תחושת בטן, המערכת אוספת נתונים אמיתיים (כמו כמה תיירים הגיעו בעבר, כמה אנשים מחפשים "ישראל" באינטרנט, ועוד) ומציגה אותם בצורה ברורה — כולל, במקומות מסוימים, ניתוח בעזרת בינה מלאכותית (AI) שמסביר את המשמעות במילים פשוטות. **זוהי מערכת לצפייה וניתוח בלבד (Read Only)** — אין בה אפשרות להזין, לערוך או למחוק נתונים; כל השינויים בבסיס הנתונים נעשים מחוץ למערכת.`
     },
     {
       emoji: "🗂️",
@@ -1607,11 +1340,6 @@ if (typeof window !== "undefined") {
       body: `לשונית נפרדת בראש הדף. כאן אפשר להעלות קובץ (Excel, CSV או PDF) עם נתוני סקר תיירות נכנסת, ולקבל ניתוח מפורט שמחולק לפי נושאים (למשל צליינות, מורשת, פנאי, תיירות עסקים) עם סיכום מסודר בסוף. **הקובץ עצמו נקרא בדפדפן בלבד ולא נשמר בשום מקום במערכת** — רק הניתוח שמופק ממנו מוצג על המסך.`
     },
     {
-      emoji: "🗄️",
-      title: "ניהול בסיס הנתונים — הוספה, עריכה ומחיקה",
-      body: `דרך ⚙️ הגדרות ← "ניהול נתונים" נפתח מסך שמראה את כל המדינות והשנים שבמאגר, עם אפשרות מחיקה לכל שורה. כפתור "➕ הוספת מדינה/שנה" פותח טופס בשני חלקים: קודם פרטי המדינה עצמה (שם, דגל, אזור, מרחק מישראל — חלק מהשדות מתמלאים אוטומטית), ואז הנתונים של שנה ספציפית. אם שוכחים למלא שדה חובה, המערכת מציעה להשלים אותו אוטומטית עם AI, או להשאיר אותו ריק במודע.`
-    },
-    {
       emoji: "✈️",
       title: "מצב תעופתי כיום — לשונית טיסות נתב״ג",
       body: `לשונית רביעית בראש הדף, נפרדת לגמרי משלוש לשוניות טווחי השנים — היא לא מבוססת על נתוני המדינות שהוזנו ידנית, אלא על נתוני טיסות אמיתיים שמתעדכנים אוטומטית כל 15 דקות ממאגר "טיסות" הפתוח של רשות שדות התעופה. מציגה רק **נחיתות** (טיסות נכנסות לישראל) של 7 הימים האחרונים, לפי מדינת/עיר מוצא, כדי לעזור להבין מאיפה בפועל אפשר להביא תיירים.
@@ -1623,7 +1351,7 @@ if (typeof window !== "undefined") {
     {
       emoji: "💬",
       title: "עוזר הניווט הצף",
-      body: `כפתור עגול ירוק בפינה השמאלית התחתונה של המסך, בכל מקום באתר. זה צ'אט קטן שעונה על שאלות לגבי **איך להשתמש באתר עצמו** — למשל "איפה משנים סיסמה" או "מה זה ציון כולל". הוא מתוכנת בכוונה לענות רק על שאלות הקשורות למערכת, ולסרב בנימוס לכל נושא אחר.`
+      body: `כפתור עגול ירוק בפינה השמאלית התחתונה של המסך, בכל מקום באתר. זה צ'אט קטן שעונה על שאלות לגבי **איך להשתמש באתר עצמו** — למשל "מה זה ציון כולל" או "איך עובד ניתוח הרגרסיה". הוא מתוכנת בכוונה לענות רק על שאלות הקשורות למערכת, ולסרב בנימוס לכל נושא אחר.`
     },
     {
       emoji: "📊",
@@ -1648,36 +1376,6 @@ if (typeof window !== "undefined") {
   }
   function RegressionMethodologyModal({ onClose }) {
     return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[75] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between sticky top-0 card z-10" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "🧮 איך מחושבת הרגרסיה הליניארית — הסבר מלא"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "✕")), /* @__PURE__ */ React.createElement("div", { className: "p-6 space-y-5 text-sm text-primary leading-relaxed" }, /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "1️⃣ סוג המודל"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, 'רגרסיה ליניארית מרובה קלאסית בשיטת "ריבועים פחותים" (OLS — Ordinary Least Squares). המודל מנסה להסביר את מספר הכניסות לישראל ממדינה מסוימת בשנה מסוימת, כפונקציה ליניארית של ', /* @__PURE__ */ React.createElement("b", null, "כל"), " הפרמטרים הזמינים בטבלת הנתונים: מדד פיתוח אנושי (HDI), נפח תיירות יוצאת, מדד חיפוש מקוון, איכות תשתיות תעופה, אוכלוסייה יהודית, קיום טיסות ישירות, והעדר אזהרת מסע.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "2️⃣ תקנון הנתונים (Standardization)"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "לפני החישוב, כל משתנה (כולל המשתנה המוסבר) מתוקנן לציון תקן (z-score): מחסירים את הממוצע ומחלקים בסטיית התקן. כך לכל משתנה יש ממוצע 0 וסטיית תקן 1, ללא קשר ליחידות המקוריות שלו. זה הכרחי כדי שאפשר יהיה להשוות בין המקדמים בהמשך.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "3️⃣ פתרון המודל"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "המודל נפתר באמצעות משוואות נורמליות: XᵀX·β = Xᵀy (כאשר X היא מטריצת הפרמטרים המתוקננים ועמודת חיתוך, ו-y הוא המשתנה המוסבר המתוקנן). המשוואות נפתרות באמצעות אלימינציית גאוס-ג'ורדן — שיטה אלגברית סטנדרטית ומדויקת, לא קירוב.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "4️⃣ R² — מידת ההתאמה"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, 'R² מודד איזה אחוז מהשונות בכניסות התיירים "מוסבר" על ידי כל הפרמטרים במודל, בסולם 0 עד 1. ככל שגבוה יותר — המודל מסביר יותר. ככלל אצבע גס: מעל 0.7 = הסבר חזק, 0.4-0.7 = בינוני, מתחת ל-0.4 = חלש (יש כנראה גורמים משמעותיים נוספים מחוץ למודל). ', /* @__PURE__ */ React.createElement("b", null, "חשוב:"), " R² גבוה מראה קורלציה חזקה, אך אינו מוכיח קשר סיבתי.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, '5️⃣ "אחוז ההשפעה" של כל פרמטר — ומה המגבלה שלו'), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "האחוז מחושב כך: ", /* @__PURE__ */ React.createElement("code", null, "|מקדם הפרמטר| ÷ סכום כל המקדמים המוחלטים × 100"), '. זו הערכה פשוטה ואינטואיטיבית ל"חשיבות יחסית", המבוססת על כך שכל המקדמים כבר מתוקננים ולכן בני-השוואה. ', /* @__PURE__ */ React.createElement("b", null, "זו לא רמת מובהקות סטטיסטית (p-value)"), " ולא שיטת ייחוס פורמלית (כמו Shapley values). המגבלה המרכזית: אם שני פרמטרים מתואמים ביניהם (למשל HDI וחיפוש מקוון עשויים לנוע יחד במדינות מפותחות), האחוזים עלולים להיות מוטים. זהו כלי טוב לתובנה ראשונית — לא תחליף למחקר סטטיסטי מלא.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "5.5️⃣ p-value ו-VIF שנוספו לכל פרמטר"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "ליד כל פרמטר מוצג גם ", /* @__PURE__ */ React.createElement("b", null, "p-value"), " (ההסתברות לקבל תוצאה כזו או קיצונית ממנה אם בפועל אין קשר אמיתי — נמוך יותר = חשד חזק יותר שהקשר אמיתי ולא מקרי) ו-", /* @__PURE__ */ React.createElement("b", null, "VIF"), " — מדד שמתריע כשפרמטר מתואם חזק עם פרמטרים אחרים במודל (VIF מעל 5 נחשב חשוד, מעל 10 בעייתי — במקרה כזה קשה להפריד בין ההשפעה ה'אמיתית' של כל אחד מהם). ", /* @__PURE__ */ React.createElement("b", null, "אזהרה חשובה:"), " ה-p-value מחושב באופן 'נאיבי' — הוא מניח שכל שורת מדינה-שנה היא תצפית עצמאית, בעוד שבפועל שורות של אותה מדינה על פני שנים שונות קשורות זו לזו. המשמעות: p-values כאן ", /* @__PURE__ */ React.createElement("b", null, "עלולים להיראות טובים יותר ממה שהם באמת"), ". חישוב מדויק (Clustered Standard Errors לפי מדינה) דורש מספר גדול משמעותית של מדינות במאגר כדי להיות אמין, ועדיין לא מומש.")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "6️⃣ הצבעים בגרף"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "🔵 כחול = השפעה חיובית (ככל שהפרמטר גבוה יותר, כך צפויים יותר תיירים). 🔴 אדום = השפעה שלילית (ככל שהפרמטר גבוה יותר, כך צפויים פחות תיירים).")), /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "7️⃣ איך לבדוק בעצמכם"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, 'בלשונית "ניתוח דירוג" → "ניתוח רגרסיה" יש כפתור "🔍 הצג נתוני גלם ששימשו לחישוב" שמציג את כל השורות (מדינה/שנה/ערכים) שנכנסו בפועל לחישוב. אפשר להעתיק את הטבלה לאקסל ולהריץ שם רגרסיה מקבילה (Data → Data Analysis → Regression באקסל, או פונקציית LINEST) כדי לוודא שהתוצאות שלנו תואמות.')), /* @__PURE__ */ React.createElement("section", { className: "rounded-xl p-3", style: { background: hexA("#f59e0b", 0.1), border: `1px solid ${hexA("#f59e0b", 0.3)}` } }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold mb-1.5" }, "⚠️ מגבלות שחשוב להכיר"), /* @__PURE__ */ React.createElement("p", { className: "text-secondary" }, "(1) חושבו p-value ו-VIF לכל מקדם, אך ב'אופן נאיבי' — בלי תיקון לכך שכל מדינה תורמת כמה שורות קשורות (repeated measures/panel data), מה שעלול להציג מובהקות טובה יותר ממה שקיימת בפועל. (2) VIF מזהה קורלציה בין זוגות/קבוצות פרמטרים, אבל לא מתקן אותה אוטומטית — הפרשנות של פרמטר עם VIF גבוה נשארת פחות אמינה. (3) המודל מבוסס על כל הנתונים במאגר (2010-2019 בלבד עדיין) — ככל שיתווספו שנים ומדינות, התוצאות עשויות להשתנות, וגם תיקון סטטיסטי נכון יותר (Clustered SE) ייעשה משמעותי יותר. אם צריך רמת דיוק סטטיסטי גבוהה יותר לצורך החלטות תקציביות משמעותיות, מומלץ להיוועץ באנליסט סטטיסטי.")))));
-  }
-  function DataManagementModal({ onClose, countries, allMetrics, onRefresh }) {
-    const [showCrud, setShowCrud] = useState(false);
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[65] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "🗄️ ניהול בסיס הנתונים"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "✕")), /* @__PURE__ */ React.createElement("div", { className: "p-6" }, /* @__PURE__ */ React.createElement(DataManagementPanel, { countries, allMetrics, onRefresh, onAddNew: () => setShowCrud(true) }))), showCrud && /* @__PURE__ */ React.createElement(CrudModal, { onClose: () => setShowCrud(false), countries, onSaved: onRefresh }));
-  }
-  function ChangePasswordModal({ onClose, onChangePassword }) {
-    const [newPw, setNewPw] = useState("");
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-    const save = async () => {
-      if (newPw.trim().length < 3) return;
-      setSaving(true);
-      await DataAPI.setSetting("site_password", newPw.trim());
-      onChangePassword(newPw.trim());
-      setSaving(false);
-      setSaved(true);
-      setTimeout(onClose, 1200);
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[70] flex items-center justify-center p-4", style: { background: "var(--overlay-bg)" }, dir: "rtl" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl shadow-2xl w-full max-w-sm border" }, /* @__PURE__ */ React.createElement("div", { className: "p-5 border-b divider flex items-center justify-between" }, /* @__PURE__ */ React.createElement("h3", { className: "font-bold text-lg text-primary" }, "🔑 שינוי סיסמה"), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "p-1.5 rounded-lg hoverable text-secondary" }, "✕")), /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-4" }, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        type: "password",
-        value: newPw,
-        autoFocus: true,
-        onChange: (e) => setNewPw(e.target.value),
-        onKeyDown: (e) => e.key === "Enter" && save(),
-        placeholder: "הזן סיסמה חדשה",
-        className: "input-field w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-      }
-    ), saved && /* @__PURE__ */ React.createElement("p", { className: "text-emerald-500 text-sm" }, "✅ הסיסמה עודכנה בהצלחה"), /* @__PURE__ */ React.createElement("button", { onClick: save, disabled: saving || newPw.trim().length < 3, className: "w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-medium py-2.5 rounded-lg text-sm" }, saving ? "שומר..." : "שמור סיסמה חדשה"))));
   }
   const SUB_MODULES = [
     { key: "single", label: "🔎 ניתוח מדינה בודדת" },
@@ -2081,7 +1779,7 @@ ${csv}`;
         title: countries.length ? "" : "נתוני המדינות עדיין נטענים"
       },
       "🎯 פערי הזדמנות מול טיסות ישירות מוצהרות"
-    ), /* @__PURE__ */ React.createElement(InfoTip, { text: 'בודק, עבור כל מדינה שסומנה במסך "ניהול נתונים" כבעלת טיסות ישירות, האם זה תואם את מה שבאמת קרה בשדה בתקופה המוצגת. מוסיף לטבלה למטה עמודת "פער": 🚫 "אין נחיתות" = הוגדרה עם טיסות ישירות אך לא נחתה בה אף טיסה; ⚠️ "נפח נמוך" = הוגדרה עם טיסות ישירות אך בממוצע פחות מטיסה אחת ביום. שימושי לאתר מדינות שבהן ההגדרה הידנית כבר לא תואמת את המציאות בפועל.' }))), showGaps && level === "country" && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary px-3 py-2 rounded-lg border w-full", style: { background: hexA("#f59e0b", 0.08), borderColor: hexA("#f59e0b", 0.25) } }, "🎯 בטבלת הסיכום למטה נוספה עמודת \"פער\" — היא משווה בין ההגדרה הידנית \"יש טיסות ישירות\" (שהוזנה במסך ניהול נתונים) לבין הנחיתות שבאמת נרשמו בפועל בתקופה המוצגת. מדינות עם אי-התאמה מסומנות באדום/כתום."), customRange && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary px-3 py-2 rounded-lg border w-full", style: { background: hexA(theme.solid, 0.08), borderColor: hexA(theme.solid, 0.25) } }, "📅 מוצג טווח מותאם: ", customRange.start, " עד ", customRange.end, ". תקופת ההשוואה (\"קודם\") מחושבת אוטומטית כתקופה קודמת באותו אורך בדיוק."), loading && !flights.length && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "🔄 טוען נתוני שבועיים..."), error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16 text-red-500" }, "⚠️ שגיאה: ", error), !error && !!flights.length && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📋", label: `סה״כ (${periodLabel})`, value: fmtNum(kpis.totalCurrent), sub: kpis.trendPct != null ? `מגמה: ${fmtTrendPct(kpis.trendPct)} מול שבוע קודם` : "אין נתוני שבוע קודם להשוואה", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🗺️", label: "מדינות מקור פעילות", value: fmtNum(kpis.activeCountries), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🏙️", label: "ערים מקור פעילות", value: fmtNum(kpis.activeCities), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✈️", label: "חברות תעופה פעילות", value: fmtNum(new Set(currentWeekRows.map((f) => f.airline_name || f.airline_code).filter(Boolean)).size), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🆕", label: "מסלולים חדשים/מתעוררים", value: fmtNum(kpis.emerging), sub: "חדש השבוע או צמיחה של 50%+", accentSolid: "#22c55e" })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "🏆 Top ", level === "country" ? "מדינות" : "ערים", " מקור — ", periodLabel), topChart ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: topChart, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, background: "#22c55e", display: "inline-block", borderRadius: 2 } }), " ירוק = מסלול חדש (לא הופיע בשבוע הקודם)")) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים.")), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 השוואת שבוע נוכחי מול קודם (Top 8)"), trendChart ? /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: trendChart, options: { responsive: true, maintainAspectRatio: false } }) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים.")), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "✈️ Top חברות תעופה — ", periodLabel), airlineChart ? /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: airlineChart, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים."))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-3 flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm" }, "📃 טבלת סיכום — ", level === "country" ? "מדינה" : "עיר", " (לחץ על שורה לפירוט חברות תעופה)"), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-muted" }, "מוצגות ", fmtNum(visibleStats.length), " מתוך ", fmtNum(groupStats.length))), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider", style: { maxHeight: 460, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-xs" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, level === "country" ? "מדינה" : "עיר"), level === "city" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "מדינה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "נחיתות השבוע"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "מגמה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "חברות"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "חברה דומיננטית"), level === "country" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "ערים"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "יום שיא"), showGaps && level === "country" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "פער"))), /* @__PURE__ */ React.createElement("tbody", null, visibleStats.map((s) => {
+    ), /* @__PURE__ */ React.createElement(InfoTip, { text: 'בודק, עבור כל מדינה שסומנה במסך "ניהול נתונים" כבעלת טיסות ישירות, האם זה תואם את מה שבאמת קרה בשדה בתקופה המוצגת. מוסיף לטבלה למטה עמודת "פער": 🚫 "אין נחיתות" = הוגדרה עם טיסות ישירות אך לא נחתה בה אף טיסה; ⚠️ "נפח נמוך" = הוגדרה עם טיסות ישירות אך בממוצע פחות מטיסה אחת ביום. שימושי לאתר מדינות שבהן ההגדרה הידנית כבר לא תואמת את המציאות בפועל.' }))), showGaps && level === "country" && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary px-3 py-2 rounded-lg border w-full", style: { background: hexA("#f59e0b", 0.08), borderColor: hexA("#f59e0b", 0.25) } }, "🎯 בטבלת הסיכום למטה נוספה עמודת \"פער\" — היא משווה בין ההגדרה הידנית \"יש טיסות ישירות\" (שהוזנה בבסיס הנתונים) לבין הנחיתות שבאמת נרשמו בפועל בתקופה המוצגת. מדינות עם אי-התאמה מסומנות באדום/כתום."), customRange && /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary px-3 py-2 rounded-lg border w-full", style: { background: hexA(theme.solid, 0.08), borderColor: hexA(theme.solid, 0.25) } }, "📅 מוצג טווח מותאם: ", customRange.start, " עד ", customRange.end, ". תקופת ההשוואה (\"קודם\") מחושבת אוטומטית כתקופה קודמת באותו אורך בדיוק."), loading && !flights.length && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "🔄 טוען נתוני שבועיים..."), error && /* @__PURE__ */ React.createElement("div", { className: "text-center py-16 text-red-500" }, "⚠️ שגיאה: ", error), !error && !!flights.length && /* @__PURE__ */ React.createElement("div", { className: "space-y-5", style: { animation: "fadeIn 0.3s ease-in" } }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" }, /* @__PURE__ */ React.createElement(KpiCard, { emoji: "📋", label: `סה״כ (${periodLabel})`, value: fmtNum(kpis.totalCurrent), sub: kpis.trendPct != null ? `מגמה: ${fmtTrendPct(kpis.trendPct)} מול שבוע קודם` : "אין נתוני שבוע קודם להשוואה", accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🗺️", label: "מדינות מקור פעילות", value: fmtNum(kpis.activeCountries), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🏙️", label: "ערים מקור פעילות", value: fmtNum(kpis.activeCities), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "✈️", label: "חברות תעופה פעילות", value: fmtNum(new Set(currentWeekRows.map((f) => f.airline_name || f.airline_code).filter(Boolean)).size), accentSolid: theme.solid }), /* @__PURE__ */ React.createElement(KpiCard, { emoji: "🆕", label: "מסלולים חדשים/מתעוררים", value: fmtNum(kpis.emerging), sub: "חדש השבוע או צמיחה של 50%+", accentSolid: "#22c55e" })), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "🏆 Top ", level === "country" ? "מדינות" : "ערים", " מקור — ", periodLabel), topChart ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: topChart, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted mt-2 flex items-center gap-1.5" }, /* @__PURE__ */ React.createElement("span", { style: { width: 8, height: 8, background: "#22c55e", display: "inline-block", borderRadius: 2 } }), " ירוק = מסלול חדש (לא הופיע בשבוע הקודם)")) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים.")), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-2 gap-5" }, /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "📈 השוואת שבוע נוכחי מול קודם (Top 8)"), trendChart ? /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: trendChart, options: { responsive: true, maintainAspectRatio: false } }) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים.")), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary mb-3 text-sm" }, "✈️ Top חברות תעופה — ", periodLabel), airlineChart ? /* @__PURE__ */ React.createElement(ChartCanvas, { type: "bar", data: airlineChart, options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }) : /* @__PURE__ */ React.createElement("p", { className: "text-sm text-muted text-center py-10" }, "אין מספיק נתונים."))), /* @__PURE__ */ React.createElement("div", { className: "card rounded-2xl p-4 border shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-3 flex-wrap gap-2" }, /* @__PURE__ */ React.createElement("h4", { className: "font-semibold text-primary text-sm" }, "📃 טבלת סיכום — ", level === "country" ? "מדינה" : "עיר", " (לחץ על שורה לפירוט חברות תעופה)"), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-muted" }, "מוצגות ", fmtNum(visibleStats.length), " מתוך ", fmtNum(groupStats.length))), /* @__PURE__ */ React.createElement("div", { className: "overflow-x-auto rounded-lg border divider", style: { maxHeight: 460, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("table", { className: "w-full text-xs" }, /* @__PURE__ */ React.createElement("thead", { className: "text-secondary sticky top-0", style: { background: "var(--hover-bg)" } }, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, level === "country" ? "מדינה" : "עיר"), level === "city" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "מדינה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "נחיתות השבוע"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "מגמה"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "חברות"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "חברה דומיננטית"), level === "country" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "ערים"), /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "יום שיא"), showGaps && level === "country" && /* @__PURE__ */ React.createElement("th", { className: "text-right px-2 py-1.5" }, "פער"))), /* @__PURE__ */ React.createElement("tbody", null, visibleStats.map((s) => {
       const isExpanded = expandedKey === s.key;
       const rowsOut = [/* @__PURE__ */ React.createElement("tr", { key: s.key, className: "border-t divider cursor-pointer hoverable", onClick: () => setExpandedKey(isExpanded ? null : s.key) }, /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-primary font-medium" }, s.isNewRoute && "🆕 ", s.name), level === "city" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.country), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, fmtNum(s.count), /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " (", fmtDec(s.avgPerDay), "/יום)")), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5" }, s.isNewRoute ? /* @__PURE__ */ React.createElement("span", { className: "font-medium", style: { color: "#22c55e" } }, "🆕 חדש") : s.trendPct != null ? /* @__PURE__ */ React.createElement("span", { className: "font-medium", style: { color: s.trendPct >= 0 ? "#16a34a" : "#ef4444" } }, s.trendPct >= 0 ? "▲ " : "▼ ", fmtTrendPct(s.trendPct)) : /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "-")), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.airlineCount), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.topAirline ? `${s.topAirline.name} (${s.topAirline.sharePct}%)` : "-"), level === "country" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.uniqueCityCount), /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5 text-secondary" }, s.peakWeekdayLabel), showGaps && level === "country" && /* @__PURE__ */ React.createElement("td", { className: "px-2 py-1.5" }, s.gapFlag === "zero" ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-1.5 py-0.5 rounded font-medium", style: { background: hexA("#ef4444", 0.15), color: "#ef4444" }, title: "מוגדר עם טיסות ישירות ב-countries, אך אין ולו נחיתה אחת בשבוע האחרון" }, "🚫 אין נחיתות השבוע") : s.gapFlag === "underused" ? /* @__PURE__ */ React.createElement("span", { className: "text-xs px-1.5 py-0.5 rounded font-medium", style: { background: hexA("#f59e0b", 0.15), color: "#b45309" }, title: "מוגדר עם טיסות ישירות ב-countries, אך נפח נמוך מטיסה ביום בפועל בשבוע האחרון" }, "⚠️ נפח נמוך") : s.hasDirectFlights === false ? /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "אין טיסות ישירות מוצהרות") : s.hasDirectFlights == null ? /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "-") : /* @__PURE__ */ React.createElement("span", { className: "text-secondary" }, "✓ תואם")))];
       if (isExpanded) {
@@ -2192,33 +1890,7 @@ ${csv}`;
       }
     ), /* @__PURE__ */ React.createElement("button", { onClick: send, disabled: loading, className: "bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm" }, "➤"))));
   }
-  const SESSION_KEY = "tourism_dashboard_session";
-  const SESSION_HOURS = 24;
-  function hasValidSession() {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return false;
-      const { ts } = JSON.parse(raw);
-      return Date.now() - ts < SESSION_HOURS * 60 * 60 * 1e3;
-    } catch (e) {
-      return false;
-    }
-  }
-  function saveSession() {
-    try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
-    } catch (e) {
-    }
-  }
-  function clearSession() {
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch (e) {
-    }
-  }
   function App() {
-    const [authed, setAuthed] = useState(() => hasValidSession());
-    const [password, setPassword] = useState("tourism.marketing");
     const [activeTab, setActiveTab] = useState("t1");
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mode, setMode] = useState("light");
@@ -2242,7 +1914,6 @@ ${csv}`;
       setDataLoading(false);
     }, []);
     useEffect(() => {
-      DataAPI.getSetting("site_password", "tourism.marketing").then(setPassword);
       loadData();
     }, [loadData]);
     useEffect(() => {
@@ -2260,10 +1931,6 @@ ${csv}`;
     const isFlightsTab = activeTab === "flights";
     const subheaderNode = isFlightsTab ? /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "🛫 נתוני טיסות חיים מנתב״ג · מאגר \"טיסות\" הפתוח של רשות שדות התעופה (data.gov.il) · מתעדכן אוטומטית כל 15 דקות") : /* @__PURE__ */ React.createElement("p", { className: "text-xs text-secondary mt-0.5" }, "📅 ", theme.years[0], "–", theme.years[theme.years.length - 1], " · 🌍 ", countries.length, " מדינות במאגר");
     const mainContent = isFlightsTab ? /* @__PURE__ */ React.createElement(FlightsMainTab, { theme, countries, allMetrics }) : /* @__PURE__ */ React.createElement(React.Fragment, null, dataLoading && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-secondary" }, "🔄 טוען נתונים מהמאגר..."), dataError && /* @__PURE__ */ React.createElement("div", { className: "text-center py-20 text-red-500" }, "⚠️ שגיאה בטעינת נתונים: ", dataError, /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "text-xs text-secondary" }, "בדוק את config.js (SUPABASE_URL / ANON_KEY) ואת מדיניות ה-RLS.")), !dataLoading && !dataError && /* @__PURE__ */ React.createElement(TabContent, { theme, years: theme.years, countries, allMetrics }));
-    if (!authed) return /* @__PURE__ */ React.createElement(LoginScreen, { onLogin: () => {
-      saveSession();
-      setAuthed(true);
-    }, currentPassword: password });
     return /* @__PURE__ */ React.createElement("div", { dir: "rtl", "data-mode": isDark ? "dark" : "light", className: "app-page min-h-screen transition-colors duration-300" }, /* @__PURE__ */ React.createElement(GlobalStyles, null), /* @__PURE__ */ React.createElement("header", { className: "app-nav sticky top-0 z-30 border-b shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(MinistryLogo, { size: 36 }), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-primary hidden sm:block" }, "🧳 שיווק תיירות · BI")), /* @__PURE__ */ React.createElement("nav", { className: "flex-1 flex justify-center" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 p-1 rounded-2xl overflow-x-auto max-w-full", style: { background: "var(--hover-bg)" } }, Object.entries(TAB_THEMES).map(([key, t]) => /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -2272,10 +1939,7 @@ ${csv}`;
         className: `px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${activeTab === key ? `bg-gradient-to-l ${t.grad} text-white shadow-md` : "text-secondary hoverable"}`
       },
       t.name
-    )))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSidebarOpen(true), className: "p-2 rounded-xl hoverable transition shrink-0 text-secondary" }, "⚙️"))), /* @__PURE__ */ React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4 mb-6", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, theme.name), /* @__PURE__ */ subheaderNode), mainContent), /* @__PURE__ */ React.createElement("footer", { className: "text-center text-xs text-muted py-8" }, "🧳 מערכת ניתוח שיווק תיירות · משרד התיירות"), /* @__PURE__ */ React.createElement(SettingsSidebar, { open: sidebarOpen, onClose: () => setSidebarOpen(false), mode, setMode, currentPassword: password, onChangePassword: setPassword, countries, allMetrics, onRefresh: loadData, onLogout: () => {
-      clearSession();
-      setAuthed(false);
-    } }), /* @__PURE__ */ React.createElement(NavAssistant, null));
+    )))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSidebarOpen(true), className: "p-2 rounded-xl hoverable transition shrink-0 text-secondary" }, "⚙️"))), /* @__PURE__ */ React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" }, /* @__PURE__ */ React.createElement("div", { className: "rounded-2xl border px-5 py-4 mb-6", style: { background: hexA(theme.solid, 0.07), borderColor: hexA(theme.solid, 0.25) } }, /* @__PURE__ */ React.createElement("h1", { className: `text-lg font-bold ${theme.text}` }, theme.name), /* @__PURE__ */ subheaderNode), mainContent), /* @__PURE__ */ React.createElement("footer", { className: "text-center text-xs text-muted py-8" }, "🧳 מערכת ניתוח שיווק תיירות · משרד התיירות"), /* @__PURE__ */ React.createElement(SettingsSidebar, { open: sidebarOpen, onClose: () => setSidebarOpen(false), mode, setMode }), /* @__PURE__ */ React.createElement(NavAssistant, null));
   }
   ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
 })();
